@@ -7,6 +7,17 @@ import type { AnalysisOutput } from './analysis-orchestrator.service.js';
 
 export const PROMPT_VERSION = '1.0.0';
 
+// Extract JSON from LLM response, handling markdown fences and surrounding text
+function extractJson(raw: string): unknown {
+  // Strip markdown code fences at start/end
+  const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  try { return JSON.parse(stripped); } catch {}
+  // Find outermost {...} block if LLM added surrounding text
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (match) { try { return JSON.parse(match[0]); } catch {} }
+  throw new SyntaxError('No valid JSON object found in LLM response');
+}
+
 let _llmProvider: LlmProvider | null | undefined = undefined;
 
 function getLlmProvider(): LlmProvider | null {
@@ -167,11 +178,19 @@ export async function generateReport(
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const raw = await provider.complete(userPrompt, SYSTEM_PROMPT);
-      // Strip markdown code fences if present (```json ... ```)
-      const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-      const parsed = JSON.parse(jsonStr) as unknown;
-      const validated = analysisReportSchema.parse(parsed);
-      return { report: validated, promptVersion: PROMPT_VERSION, model: provider.providerName };
+      const parsed = extractJson(raw);
+      // If model wrapped the report, try common wrapper keys
+      const candidates = [parsed, ...(typeof parsed === 'object' && parsed !== null
+        ? Object.values(parsed as Record<string, unknown>).filter(v => typeof v === 'object' && v !== null)
+        : [])];
+      let lastErr: unknown;
+      for (const candidate of candidates) {
+        try {
+          const validated = analysisReportSchema.parse(candidate);
+          return { report: validated, promptVersion: PROMPT_VERSION, model: provider.providerName };
+        } catch (e) { lastErr = e; }
+      }
+      throw lastErr;
     } catch (err) {
       process.stderr.write(`[llm] attempt ${attempt + 1} failed: ${err instanceof Error ? err.message : String(err)}\n`);
       if (attempt === 1) break;

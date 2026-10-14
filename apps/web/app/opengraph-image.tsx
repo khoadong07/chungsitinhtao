@@ -1,11 +1,16 @@
 import { ImageResponse } from 'next/og';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const alt = 'Chứng Sĩ Tỉnh Táo — Phân tích chứng khoán Việt Nam bằng AI';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-export default function OgImage() {
+export default async function OgImage() {
+  const logoData = await readFile(path.join(process.cwd(), 'public', 'logo.png'));
+  const logoSrc = `data:image/png;base64,${logoData.toString('base64')}`;
+
   return new ImageResponse(
     (
       <div
@@ -68,6 +73,10 @@ export default function OgImage() {
             padding: '0 80px',
           }}
         >
+          {/* Logo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoSrc} width={80} height={80} style={{ borderRadius: 20 }} alt="logo" />
+
           {/* Badge */}
           <div
             style={{
