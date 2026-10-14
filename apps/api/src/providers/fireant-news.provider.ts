@@ -19,6 +19,7 @@ interface RawPost {
   description: string | null;
   content: string | null;
   date: string;
+  user: { id: string; name: string } | null;
   postSource: RawPostSource | null;
   taggedSymbols: RawTaggedSymbol[];
   totalLikes: number;
@@ -57,11 +58,19 @@ const FIREANT_HEADERS = {
   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36',
 };
 
+export async function getSymbolPosts(symbol: string, limit = 15): Promise<NewsItem[]> {
+  return _fetchPosts(symbol, 0, limit);
+}
+
 export async function getSymbolNews(symbol: string, limit = 15): Promise<NewsItem[]> {
+  return _fetchPosts(symbol, 1, limit);
+}
+
+async function _fetchPosts(symbol: string, type: 0 | 1, limit: number): Promise<NewsItem[]> {
   const token = env.FIREANT_TOKEN;
   if (!token) return [];
 
-  const url = `https://restv2.fireant.vn/posts?symbol=${encodeURIComponent(symbol.toUpperCase())}&type=1&offset=0&limit=${limit}`;
+  const url = `https://restv2.fireant.vn/posts?symbol=${encodeURIComponent(symbol.toUpperCase())}&type=${type}&offset=0&limit=${limit}`;
 
   const res = await fetch(url, {
     headers: { ...FIREANT_HEADERS, 'authorization': `Bearer ${token}` },
@@ -76,9 +85,9 @@ export async function getSymbolNews(symbol: string, limit = 15): Promise<NewsIte
   return (data as RawPost[]).map(p => ({
     id: p.postID,
     title: p.title ?? '',
-    description: p.description ?? '',
+    description: p.description ?? p.content ?? '',
     date: p.date,
-    sourceName: p.postSource?.name ?? 'FireAnt',
+    sourceName: p.postSource?.name ?? (p.user as { name?: string } | null)?.name ?? 'FireAnt',
     sourceUrl: p.postSource?.url ?? 'https://fireant.vn',
     articleUrl: p.contentURL ?? null,
     imageUrl: p.linkImage ?? null,

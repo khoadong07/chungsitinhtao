@@ -8,6 +8,7 @@ import { ScenarioPanel } from './scenario-panel';
 import { ValuationPanel } from './valuation-panel';
 import { AiAgentPanel } from './ai-agent-panel';
 import { NewsWidget } from './news-widget';
+import { CommunityWidget } from './community-widget';
 
 const CandlestickChart = dynamic(() => import('./candlestick-chart'), { ssr: false });
 
@@ -21,7 +22,7 @@ function Card({ children, className = '', style = {} }: { children: React.ReactN
   return (
     <div
       className={`rounded-2xl hover-lift ${className}`}
-      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', ...style }}
+      style={{ background: 'rgba(14,18,35,0.8)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)', ...style }}
     >
       {children}
     </div>
@@ -30,7 +31,10 @@ function Card({ children, className = '', style = {} }: { children: React.ReactN
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-3">{children}</p>
+    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-3 flex items-center gap-2">
+      <span className="inline-block w-1 h-3 rounded-full" style={{ background: 'linear-gradient(180deg,#7c3aed,#22d3ee)' }} />
+      {children}
+    </p>
   );
 }
 
@@ -42,8 +46,8 @@ function PriceZones({ zones }: { zones: AnalysisOutput['priceZones'] }) {
   return (
     <div className="grid grid-cols-2 gap-3">
       {[
-        { label: 'Hỗ trợ', items: supports, clr: '#10b981', bg: 'rgba(16,185,129,0.07)', b: 'rgba(16,185,129,0.15)' },
-        { label: 'Kháng cự', items: resistances, clr: '#f43f5e', bg: 'rgba(244,63,94,0.07)', b: 'rgba(244,63,94,0.15)' },
+        { label: 'Hỗ trợ', items: supports, clr: '#22c55e', bg: 'rgba(34,197,94,0.06)', b: 'rgba(34,197,94,0.18)' },
+        { label: 'Kháng cự', items: resistances, clr: '#ef4444', bg: 'rgba(239,68,68,0.06)', b: 'rgba(239,68,68,0.18)' },
       ].map(({ label, items, clr, bg, b }) => (
         <div key={label}>
           <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: clr }}>{label}</p>
@@ -92,27 +96,42 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false }: Props
 
       {/* ── Hero Header ─────────────────────────────── */}
       <div
-        className="rounded-2xl p-5 anim-fade-up d-0"
-        style={{ background: 'linear-gradient(135deg,rgba(139,92,246,0.1),rgba(6,182,212,0.05))', border: '1px solid rgba(139,92,246,0.18)' }}
+        className="rounded-2xl p-5 anim-fade-up d-0 gradient-border"
+        style={{
+          background: 'linear-gradient(135deg,rgba(109,40,217,0.12),rgba(14,18,35,0.9),rgba(6,182,212,0.04))',
+          backdropFilter: 'blur(12px)',
+        }}
       >
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <h1 className="text-3xl font-bold text-white tracking-tight">{data.symbol}</h1>
+            <div className="flex items-center gap-3 mb-1.5">
+              <h1 className="text-4xl font-bold text-white tracking-tight font-display metric-in">{data.symbol}</h1>
               {data.fundamental?.filter.industry && (
-                <span className="text-xs px-2 py-0.5 rounded-md text-violet-300 font-medium" style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                <span className="text-[11px] px-2.5 py-1 rounded-lg text-violet-300 font-semibold" style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.2)' }}>
                   {data.fundamental.filter.industry}
                 </span>
               )}
+              {/* Market status dot */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-dot" />
+                <span className="text-[10px] text-slate-600">Live</span>
+              </div>
             </div>
-            <p className="text-xs text-slate-500">{asOf} · {technical.dataQuality.totalCandles} nến · 1D</p>
+            <p className="text-xs text-slate-600">{asOf} · {technical.dataQuality.totalCandles} nến · 1D</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-3xl font-bold tabular-nums text-white metric-in">{close.toFixed(2)}</p>
-            <p className="text-xs text-slate-500 mt-0.5">nghìn VND</p>
+            <p className={`text-4xl font-bold tabular-nums font-mono metric-in ${vsEma !== null && vsEma >= 0 ? 'num-profit' : vsEma !== null ? 'num-loss' : 'text-white'}`}>
+              {close.toFixed(2)}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-0.5">nghìn VND</p>
             {vsEma !== null && (
-              <p className={`text-xs font-semibold mt-1 ${vsEma >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {vsEma >= 0 ? '▲' : '▼'} {Math.abs(vsEma).toFixed(2)}% vs EMA20
+              <p className={`text-xs font-bold mt-1.5 flex items-center justify-end gap-1 ${vsEma >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                  {vsEma >= 0
+                    ? <path d="M12 4l8 16H4z"/>
+                    : <path d="M12 20L4 4h16z"/>}
+                </svg>
+                {Math.abs(vsEma).toFixed(2)}% vs EMA20
               </p>
             )}
           </div>
@@ -120,20 +139,20 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false }: Props
 
         {/* Fundamentals strip */}
         {data.fundamental && (
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             {[
-              { l: 'P/E',       v: data.fundamental.filter.pe   > 0 ? data.fundamental.filter.pe.toFixed(1)   : 'N/A' },
-              { l: 'P/B',       v: data.fundamental.filter.pb   > 0 ? data.fundamental.filter.pb.toFixed(2)   : 'N/A' },
-              { l: 'ROE',       v: data.fundamental.filter.roe.toFixed(1) + '%' },
-              { l: 'ROA',       v: data.fundamental.filter.roa.toFixed(1) + '%' },
-              { l: 'EPS',       v: data.fundamental.filter.eps  > 0 ? (data.fundamental.filter.eps/1000).toFixed(0) + 'k' : 'N/A' },
-              { l: 'Beta',      v: data.fundamental.filter.beta.toFixed(2) },
-              { l: 'Vốn hóa',   v: (data.fundamental.filter.marketCapBillion/1000).toFixed(0) + 'T' },
-              { l: 'NĐTNN',     v: data.fundamental.filter.foreignOwnershipPct.toFixed(1) + '%' },
-            ].map(({ l, v }) => (
-              <div key={l}>
-                <p className="text-[10px] text-slate-500 mb-0.5">{l}</p>
-                <p className="text-xs font-bold text-slate-200">{v}</p>
+              { l: 'P/E',     v: data.fundamental.filter.pe   > 0 ? data.fundamental.filter.pe.toFixed(1)   : 'N/A', dim: data.fundamental.filter.pe <= 0 },
+              { l: 'P/B',     v: data.fundamental.filter.pb   > 0 ? data.fundamental.filter.pb.toFixed(2)   : 'N/A', dim: data.fundamental.filter.pb <= 0 },
+              { l: 'ROE',     v: data.fundamental.filter.roe.toFixed(1) + '%', dim: false },
+              { l: 'ROA',     v: data.fundamental.filter.roa.toFixed(1) + '%', dim: false },
+              { l: 'EPS',     v: data.fundamental.filter.eps  > 0 ? (data.fundamental.filter.eps/1000).toFixed(0) + 'k' : 'N/A', dim: data.fundamental.filter.eps <= 0 },
+              { l: 'Beta',    v: data.fundamental.filter.beta.toFixed(2), dim: false },
+              { l: 'Vốn hóa', v: (data.fundamental.filter.marketCapBillion/1000).toFixed(0) + 'T', dim: false },
+              { l: 'NĐTNN',   v: data.fundamental.filter.foreignOwnershipPct.toFixed(1) + '%', dim: false },
+            ].map(({ l, v, dim }) => (
+              <div key={l} className="group">
+                <p className="text-[10px] text-slate-600 mb-0.5 uppercase tracking-wide">{l}</p>
+                <p className={`text-xs font-bold font-mono transition-colors ${dim ? 'text-slate-600' : 'text-slate-200 group-hover:text-white'}`}>{v}</p>
               </div>
             ))}
           </div>
@@ -190,14 +209,26 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false }: Props
           <div className="anim-slide-r d-3">
             <NewsWidget symbol={data.symbol} enabled={true} />
           </div>
+          <div className="anim-slide-r d-4">
+            <CommunityWidget symbol={data.symbol} enabled={true} />
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-1 anim-fade d-6">
-        <p className="text-xs text-slate-700">Phân tích tự động · Không phải lời khuyên đầu tư</p>
-        <button onClick={onRetry} className="text-xs text-violet-500 hover:text-violet-400 transition-colors flex items-center gap-1">
-          <span>↺</span> Làm mới
+      <div className="flex items-center justify-between pt-2 anim-fade d-6">
+        <div className="flex items-center gap-1.5">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+          </svg>
+          <p className="text-[11px] text-slate-700">Phân tích tự động · Không phải lời khuyên đầu tư</p>
+        </div>
+        <button onClick={onRetry} className="flex items-center gap-1.5 text-xs font-medium text-violet-500 hover:text-violet-400 transition-colors neon-hover cursor-pointer">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+          </svg>
+          Làm mới
         </button>
       </div>
     </div>

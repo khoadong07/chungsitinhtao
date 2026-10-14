@@ -3,35 +3,94 @@
 @tailwind utilities;
 
 :root {
-  /* Financial Dashboard palette — ui-ux-pro-max-skill #6 */
+  /* ── Financial Dashboard palette — ui-ux-pro-max-skill #6 ── */
   --bg:           #020617;
   --surface:      #0E1223;
+  --surface-2:    #111827;
   --border:       rgba(255,255,255,0.06);
+  --border-2:     rgba(255,255,255,0.1);
   --text:         #f8fafc;
-  --muted:        #475569;
+  --muted:        #94a3b8;
+  --muted-2:      #475569;
+
+  /* Financial signal colors */
+  --profit:       #22c55e;
+  --loss:         #ef4444;
+  --neutral:      #f59e0b;
+  --cyan:         #22d3ee;
+
+  /* Brand accent */
   --purple:       #7c3aed;
+  --purple-mid:   #9333ea;
   --purple-light: #a855f7;
+
+  /* Glass effect */
+  --glass-bg:     rgba(14,18,35,0.7);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-blur:   16px;
+
+  /* Legacy aliases */
   --green:        #22c55e;
   --red:          #ef4444;
   --amber:        #f59e0b;
-  --cyan:         #22d3ee;
-  /* legacy aliases kept for components */
   --color-bg:     #020617;
   --color-card:   #0E1223;
   --color-border: rgba(255,255,255,0.06);
   --color-purple: #7c3aed;
   --color-purple-light: #a855f7;
+
+  /* Fonts */
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --font-body:    'Inter', sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, monospace;
 }
 
 * { box-sizing: border-box; }
 
-body { background: var(--bg); }
+body {
+  background: var(--bg);
+  font-family: var(--font-body);
+}
+
+/* Space Grotesk for headings and brand */
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+}
 
 /* JetBrains Mono for all numeric data */
 .font-mono, .tabular-nums {
   font-family: var(--font-mono);
   font-feature-settings: 'tnum' 1;
+}
+
+/* ── Glass card ── */
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+/* ── Profit / Loss colors ── */
+.profit { color: var(--profit); }
+.loss   { color: var(--loss); }
+.neutral-color { color: var(--neutral); }
+
+/* ── Gradient border accent ── */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.5), rgba(34,211,238,0.2), rgba(124,58,237,0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 /* Base button — cursor + focus ring */
@@ -45,11 +104,6 @@ body { background: var(--bg); }
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn:active:not(:disabled) { transform: scale(0.97); }
-
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.25); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.4); }
 
 /* ── Keyframes ──────────────────────────────────────── */
 
@@ -140,11 +194,58 @@ body { background: var(--bg); }
 /* Metric number entrance */
 .metric-in { animation: countUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
 
-/* Hover lift */
+/* ── Hover lift ── */
 .hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease;
 }
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06);
 }
+
+/* ── Number glow (profit/loss) ── */
+.num-profit {
+  color: var(--profit);
+  text-shadow: 0 0 20px rgba(34,197,94,0.35);
+}
+.num-loss {
+  color: var(--loss);
+  text-shadow: 0 0 20px rgba(239,68,68,0.35);
+}
+
+/* ── Active quick-pick ── */
+.pick-active {
+  background: rgba(124,58,237,0.2);
+  border-color: rgba(124,58,237,0.45);
+  color: #c4b5fd;
+  box-shadow: 0 0 12px rgba(124,58,237,0.15);
+}
+
+/* ── Gradient text ── */
+.gradient-text {
+  background: linear-gradient(135deg, #a855f7, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Neon underline on hover ── */
+.neon-hover {
+  position: relative;
+}
+.neon-hover::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(168,85,247,0.6), transparent);
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+}
+.neon-hover:hover::after { transform: scaleX(1); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.4); }

@@ -167,7 +167,9 @@ export async function generateReport(
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const raw = await provider.complete(userPrompt, SYSTEM_PROMPT);
-      const parsed = JSON.parse(raw) as unknown;
+      // Strip markdown code fences if present (```json ... ```)
+      const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+      const parsed = JSON.parse(jsonStr) as unknown;
       const validated = analysisReportSchema.parse(parsed);
       return { report: validated, promptVersion: PROMPT_VERSION, model: provider.providerName };
     } catch (err) {

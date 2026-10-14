@@ -44,54 +44,81 @@ export default function HomePage() {
   const closePrice = data?.technical?.snapshot?.close;
 
   return (
-    <div className="min-h-screen" style={{ background: '#080b1a' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
 
       {/* ── Top Bar ─────────────────────────────────── */}
       <header
-        className="sticky top-0 z-30 backdrop-blur-md"
-        style={{ background: 'rgba(8,11,26,0.88)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+        className="sticky top-0 z-30"
+        style={{
+          background: 'rgba(2,6,23,0.85)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: '0 1px 0 0 rgba(124,58,237,0.08)',
+        }}
       >
         <div className="max-w-[1440px] mx-auto px-5 h-14 flex items-center gap-4">
-          {/* Logo */}
+
+          {/* Logo + brand */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <Image src="/logo.png" alt="Chứng Sĩ Tỉnh Táo" width={32} height={32} className="rounded-lg" priority />
+            <div className="relative">
+              <Image src="/logo.png" alt="Chứng Sĩ Tỉnh Táo" width={32} height={32} className="rounded-xl" priority />
+              <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 glow-dot" />
+            </div>
             <div className="hidden sm:block">
-              <p className="font-bold text-sm tracking-tight text-white leading-none">Chứng Sĩ Tỉnh Táo</p>
-              <p className="text-[10px] text-slate-500 leading-none mt-0.5">Đừng nghe tiếng lòng, hãy nghe dữ liệu.</p>
+              <p className="font-bold text-sm text-white leading-none font-display tracking-tight">Chứng Sĩ Tỉnh Táo</p>
+              <p className="text-[10px] text-slate-500 leading-none mt-0.5 italic">Đừng nghe tiếng lòng, hãy nghe dữ liệu.</p>
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-6 shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+
           {/* Search form */}
-          <form onSubmit={handleSubmit} className="flex items-center gap-2 flex-1 max-w-lg">
+          <form onSubmit={handleSubmit} className="flex items-center gap-2 flex-1 max-w-sm">
             <div className="relative flex-1">
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
               <input
                 type="text"
                 value={inputVal}
                 onChange={e => { setInputVal(e.target.value); setInputError(''); }}
-                placeholder="Mã CP: ACB, MBB..."
-                className="w-full pl-8 pr-3 py-1.5 rounded-lg text-sm text-white placeholder-slate-600 focus:outline-none uppercase transition-all"
-                style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${inputError ? 'rgba(244,63,94,0.5)' : 'rgba(255,255,255,0.08)'}` }}
+                placeholder="ACB, VNM, FPT..."
+                className="w-full pl-8 pr-3 py-1.5 rounded-xl text-sm font-semibold text-white placeholder-slate-600 focus:outline-none uppercase transition-all focus:ring-1 focus:ring-violet-500/40"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${inputError ? 'rgba(244,63,94,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  letterSpacing: '0.05em',
+                }}
                 maxLength={10} autoComplete="off" spellCheck={false}
               />
             </div>
             <select
               value={horizon}
               onChange={e => setHorizon(e.target.value as 'swing' | 'position')}
-              className="text-xs text-slate-300 py-1.5 px-2 rounded-lg focus:outline-none shrink-0"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+              className="text-[11px] font-medium text-slate-400 py-1.5 px-2 rounded-xl focus:outline-none shrink-0 cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
               <option value="swing">Swing</option>
               <option value="position">Position</option>
             </select>
             <button
               type="submit" disabled={isLoading}
-              className="shrink-0 px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all disabled:opacity-50 active:scale-95"
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
+              className="shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+              style={{
+                background: 'linear-gradient(135deg,#6d28d9,#7c3aed,#9333ea)',
+                boxShadow: '0 2px 12px rgba(124,58,237,0.35)',
+              }}
             >
-              {isLoading ? '…' : 'Phân tích'}
+              {isLoading ? (
+                <span className="flex items-center gap-1.5">
+                  <svg className="animate-spin" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
+                  Đang tải
+                </span>
+              ) : 'Phân tích'}
             </button>
           </form>
 
@@ -101,11 +128,13 @@ export default function HomePage() {
               <button
                 key={s}
                 onClick={() => pickSymbol(s)}
-                className="px-2.5 py-1 rounded-md text-xs font-medium transition-all active:scale-95"
-                style={{
-                  background: s === displaySymbol ? 'rgba(139,92,246,0.22)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${s === displaySymbol ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.06)'}`,
-                  color: s === displaySymbol ? '#c4b5fd' : '#64748b',
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold tracking-wide transition-all active:scale-95 cursor-pointer ${s === displaySymbol ? 'pick-active' : ''}`}
+                style={s !== displaySymbol ? {
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  color: '#475569',
+                } : {
+                  border: '1px solid rgba(124,58,237,0.45)',
                 }}
               >
                 {s}
@@ -113,18 +142,24 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Live price */}
+          {/* Live price badge */}
           {closePrice && !isLoading && (
             <div
-              className="hidden md:flex items-center gap-2 ml-auto shrink-0 px-3 py-1.5 rounded-lg anim-fade"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+              className="hidden md:flex items-center gap-2 ml-auto shrink-0 px-3 py-1.5 rounded-xl anim-fade"
+              style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}
             >
-              <span className="text-xs text-slate-500">{displaySymbol}</span>
-              <span className="text-sm font-bold text-white tabular-nums">{closePrice.toFixed(2)}</span>
-              <span className="text-xs text-slate-600">nghìn VND</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-dot" />
+              <span className="text-[11px] font-bold text-slate-400 tracking-wide">{displaySymbol}</span>
+              <span className="text-sm font-bold text-white tabular-nums font-mono">{closePrice.toFixed(2)}</span>
+              <span className="text-[10px] text-slate-600">k</span>
             </div>
           )}
         </div>
+
+        {/* Error hint */}
+        {inputError && (
+          <p className="text-center text-xs text-rose-400 pb-1" role="alert">{inputError}</p>
+        )}
       </header>
 
       {/* ── Main ────────────────────────────────────── */}

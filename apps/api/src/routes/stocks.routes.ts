@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { symbolParamSchema, candleQuerySchema } from '../schemas/market-data.schema.js';
 import { getCandles } from '../services/market-data.service.js';
 import { getBsiFundamental } from '../providers/bsi-fundamental.provider.js';
-import { getSymbolNews } from '../providers/fireant-news.provider.js';
+import { getSymbolNews, getSymbolPosts } from '../providers/fireant-news.provider.js';
 import { AppError } from '../utils/errors.js';
 
 export async function stocksRoutes(fastify: FastifyInstance) {
@@ -80,6 +80,19 @@ export async function stocksRoutes(fastify: FastifyInstance) {
       const limit = Math.min(20, Math.max(1, parseInt(request.query.limit ?? '10', 10) || 10));
       const news = await getSymbolNews(paramParse.data.symbol, limit);
       return reply.send({ symbol: paramParse.data.symbol, count: news.length, items: news });
+    },
+  );
+
+  fastify.get<{ Params: { symbol: string }; Querystring: { limit?: string } }>(
+    '/api/v1/stocks/:symbol/posts',
+    async (request, reply) => {
+      const paramParse = symbolParamSchema.safeParse(request.params);
+      if (!paramParse.success) {
+        return reply.status(400).send({ error: { code: 'INVALID_SYMBOL', message: 'Invalid symbol' } });
+      }
+      const limit = Math.min(30, Math.max(1, parseInt(request.query.limit ?? '15', 10) || 15));
+      const posts = await getSymbolPosts(paramParse.data.symbol, limit);
+      return reply.send({ symbol: paramParse.data.symbol, count: posts.length, items: posts });
     },
   );
 }
