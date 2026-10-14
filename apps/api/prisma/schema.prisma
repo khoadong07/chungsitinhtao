@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AnalysisRun {
+  id                String   @id @default(uuid())
+  symbol            String
+  timeframe         String
+  analysisType      String
+  asOf              DateTime
+  provider          String
+  isMock            Boolean
+  isStale           Boolean
+  inputSnapshot     Json
+  technicalSnapshot Json
+  decisionSnapshot  Json
+  report            Json
+  model             String?
+  promptVersion     String?
+  createdAt         DateTime @default(now())
+
+  @@index([symbol, createdAt(sort: Desc)])
+}
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model MarketCandle {
+  id        String   @id @default(uuid())
+  symbol    String
+  timeframe String
+  timestamp DateTime
+  open      Decimal  @db.Decimal(20, 6)
+  high      Decimal  @db.Decimal(20, 6)
+  low       Decimal  @db.Decimal(20, 6)
+  close     Decimal  @db.Decimal(20, 6)
+  volume    Decimal  @db.Decimal(30, 2)
+  adjusted  Boolean?
+  provider  String
+  fetchedAt DateTime @default(now())
+
+  @@unique([symbol, timeframe, timestamp, provider])
+  @@index([symbol, timeframe, timestamp])
+}

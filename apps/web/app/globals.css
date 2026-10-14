@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Financial Dashboard palette — ui-ux-pro-max-skill #6 */
+  --bg:           #020617;
+  --surface:      #0E1223;
+  --border:       rgba(255,255,255,0.06);
+  --text:         #f8fafc;
+  --muted:        #475569;
+  --purple:       #7c3aed;
+  --purple-light: #a855f7;
+  --green:        #22c55e;
+  --red:          #ef4444;
+  --amber:        #f59e0b;
+  --cyan:         #22d3ee;
+  /* legacy aliases kept for components */
+  --color-bg:     #020617;
+  --color-card:   #0E1223;
+  --color-border: rgba(255,255,255,0.06);
+  --color-purple: #7c3aed;
+  --color-purple-light: #a855f7;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body { background: var(--bg); }
+
+/* JetBrains Mono for all numeric data */
+.font-mono, .tabular-nums {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Base button — cursor + focus ring */
+.btn {
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #7c3aed;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.25); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.4); }
+
+/* ── Keyframes ──────────────────────────────────────── */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -400% 0; }
+  100% { background-position:  400% 0; }
+}
+@keyframes glowDot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+  50%       { opacity: 0.7; box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes barFill {
+  from { transform: scaleX(0); transform-origin: left; }
+  to   { transform: scaleX(1); transform-origin: left; }
+}
+@keyframes borderPulse {
+  0%, 100% { border-color: rgba(139,92,246,0.2); }
+  50%       { border-color: rgba(139,92,246,0.45); }
+}
+
+/* ── Animation utility classes ──────────────────────── */
+
+.anim-fade-up  { animation: fadeInUp    0.45s cubic-bezier(0.16,1,0.3,1) both; }
+.anim-fade     { animation: fadeIn      0.35s ease both; }
+.anim-slide-l  { animation: slideInLeft  0.45s cubic-bezier(0.16,1,0.3,1) both; }
+.anim-slide-r  { animation: slideInRight 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+.anim-scale    { animation: scaleIn     0.4s  cubic-bezier(0.16,1,0.3,1) both; }
+
+.d-0   { animation-delay:   0ms; }
+.d-50  { animation-delay:  50ms; }
+.d-1   { animation-delay: 100ms; }
+.d-15  { animation-delay: 150ms; }
+.d-2   { animation-delay: 200ms; }
+.d-25  { animation-delay: 250ms; }
+.d-3   { animation-delay: 300ms; }
+.d-4   { animation-delay: 400ms; }
+.d-5   { animation-delay: 500ms; }
+.d-6   { animation-delay: 600ms; }
+.d-7   { animation-delay: 700ms; }
+
+/* Shimmer skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.09) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* Animated progress bar */
+.bar-fill {
+  animation: barFill 0.8s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Glowing active dot */
+.glow-dot { animation: glowDot 2s ease-in-out infinite; }
+
+/* AI panel border pulse */
+.border-pulse { animation: borderPulse 3s ease-in-out infinite; }
+
+/* Metric number entrance */
+.metric-in { animation: countUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* Hover lift */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
