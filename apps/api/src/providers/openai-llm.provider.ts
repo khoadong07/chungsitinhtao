@@ -35,7 +35,7 @@ export class OpenAiLlmProvider implements LlmProvider {
             { role: 'user', content: userPrompt },
           ],
           temperature: 0.2,
-          max_tokens: 2048,
+          max_tokens: 4096,
           response_format: { type: 'json_object' },
         }),
         signal: controller.signal,
@@ -45,8 +45,12 @@ export class OpenAiLlmProvider implements LlmProvider {
         throw new AppError('LLM_API_ERROR', `OpenAI API error: ${res.status}`, 502);
       }
 
-      const data = await res.json() as { choices: Array<{ message: { content: string } }> };
-      return data.choices[0]?.message?.content ?? '';
+      const data = await res.json() as { choices: Array<{ message: { content: string }; finish_reason: string }> };
+      const choice = data.choices[0];
+      if (choice?.finish_reason === 'length') {
+        process.stderr.write('[llm] OpenAI response truncated (finish_reason=length) — increase max_tokens\n');
+      }
+      return choice?.message?.content ?? '';
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         throw new AppError('LLM_TIMEOUT', 'LLM request timed out', 504);
