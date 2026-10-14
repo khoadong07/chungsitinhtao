@@ -178,6 +178,7 @@ export async function generateReport(
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const raw = await provider.complete(userPrompt, SYSTEM_PROMPT);
+      process.stderr.write(`[llm] attempt ${attempt + 1} raw (first 300): ${raw.slice(0, 300)}\n`);
       const parsed = extractJson(raw);
       // If model wrapped the report, try common wrapper keys
       const candidates = [parsed, ...(typeof parsed === 'object' && parsed !== null
