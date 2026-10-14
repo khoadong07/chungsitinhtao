@@ -1,9 +1,9 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import type { AnalysisOutput } from '../services/analysis-orchestrator.service.js';
 
-function toJson(value: unknown): Prisma.InputJsonValue {
-  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+// Prisma 6 removed InputJsonValue; JSON fields accept any serialisable value
+function toJson(value: unknown) {
+  return JSON.parse(JSON.stringify(value)) as object;
 }
 
 export async function saveAnalysisRun(output: AnalysisOutput): Promise<void> {

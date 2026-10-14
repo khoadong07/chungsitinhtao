@@ -73,7 +73,11 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false }: Props
   const asOf = new Date(data.asOf).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
   const close = technical.snapshot.close;
   const ema20 = technical.snapshot.ema20;
+  const ema50 = technical.snapshot.ema50;
   const vsEma = ema20 ? ((close - ema20) / ema20) * 100 : null;
+  const vsEma50 = ema50 ? ((close - ema50) / ema50) * 100 : null;
+  const prevCandle = technical.candles.length >= 2 ? technical.candles[technical.candles.length - 2] : null;
+  const vsPrevClose = prevCandle ? ((close - prevCandle.close) / prevCandle.close) * 100 : null;
 
   return (
     <div className="space-y-4">
@@ -102,16 +106,16 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false }: Props
           backdropFilter: 'blur(12px)',
         }}
       >
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <div className="flex items-center gap-3 mb-1.5">
+        <div className="flex items-start justify-between gap-6 mb-4">
+          {/* Left: symbol + meta */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 mb-1.5 flex-wrap">
               <h1 className="text-4xl font-bold text-white tracking-tight font-display metric-in">{data.symbol}</h1>
               {data.fundamental?.filter.industry && (
                 <span className="text-[11px] px-2.5 py-1 rounded-lg text-violet-300 font-semibold" style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.2)' }}>
                   {data.fundamental.filter.industry}
                 </span>
               )}
-              {/* Market status dot */}
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-dot" />
                 <span className="text-[10px] text-slate-600">Live</span>
@@ -119,21 +123,35 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false }: Props
             </div>
             <p className="text-xs text-slate-600">{asOf} · {technical.dataQuality.totalCandles} nến · 1D</p>
           </div>
+
+          {/* Right: price + comparison strip */}
           <div className="text-right shrink-0">
-            <p className={`text-4xl font-bold tabular-nums font-mono metric-in ${vsEma !== null && vsEma >= 0 ? 'num-profit' : vsEma !== null ? 'num-loss' : 'text-white'}`}>
-              {close.toFixed(2)}
-            </p>
-            <p className="text-[11px] text-slate-500 mt-0.5">nghìn VND</p>
-            {vsEma !== null && (
-              <p className={`text-xs font-bold mt-1.5 flex items-center justify-end gap-1 ${vsEma >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-                  {vsEma >= 0
-                    ? <path d="M12 4l8 16H4z"/>
-                    : <path d="M12 20L4 4h16z"/>}
-                </svg>
-                {Math.abs(vsEma).toFixed(2)}% vs EMA20
+            <div className="flex items-baseline justify-end gap-2">
+              <p className={`text-4xl font-bold tabular-nums font-mono metric-in ${vsEma !== null && vsEma >= 0 ? 'num-profit' : vsEma !== null ? 'num-loss' : 'text-white'}`}>
+                {close.toFixed(2)}
               </p>
-            )}
+              <span className="text-[11px] text-slate-500 mb-0.5">nghìn VND</span>
+            </div>
+            {/* Horizontal comparison row */}
+            <div className="flex items-stretch justify-end gap-0 mt-2">
+              {[
+                { label: 'EMA20', value: ema20, pct: vsEma },
+                { label: 'EMA50', value: ema50, pct: vsEma50 },
+                { label: 'Hôm qua', value: prevCandle?.close ?? null, pct: vsPrevClose },
+              ].filter(m => m.value !== null && m.pct !== null).map((m, i, arr) => (
+                <div
+                  key={m.label}
+                  className="px-3 text-right"
+                  style={i < arr.length - 1 ? { borderRight: '1px solid rgba(255,255,255,0.07)' } : undefined}
+                >
+                  <p className="text-[10px] text-slate-600 uppercase tracking-wide mb-0.5">{m.label}</p>
+                  <p className="text-xs font-mono text-slate-300 tabular-nums">{(m.value as number).toFixed(2)}</p>
+                  <p className={`text-[11px] font-bold tabular-nums ${(m.pct as number) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {(m.pct as number) >= 0 ? '▲' : '▼'}{Math.abs(m.pct as number).toFixed(2)}%
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

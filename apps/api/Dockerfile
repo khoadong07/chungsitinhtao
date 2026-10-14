@@ -14,6 +14,8 @@ FROM deps AS builder
 WORKDIR /app
 COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
+# Generate Prisma client before tsc so types are available
+RUN pnpm exec prisma generate --schema=apps/api/prisma/schema.prisma
 RUN pnpm --filter api build
 
 # ── runner ────────────────────────────────────────────────
