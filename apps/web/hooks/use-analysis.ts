@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { runAnalysis, pollAnalysisReport } from '../lib/api-client';
 import type { AnalysisOutput } from '../lib/types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export function useAnalysis(params: {
   symbol: string;
@@ -14,40 +14,51 @@ export function useAnalysis(params: {
     queryKey: ['analysis', params.symbol, params.holdingHorizon],
     queryFn: () => runAnalysis({ symbol: params.symbol, holdingHorizon: params.holdingHorizon }),
     enabled: params.enabled && !!params.symbol,
-    staleTime: 0,
-    gcTime: 0,
+    // Keep data fresh for 5 minutes — prevents refetch on window focus from re-POST-ing analysis
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     retry: 1,
+    refetchOnWindowFocus: false,
   });
 
-  // Merge LLM report into fast result once it arrives
   const [merged, setMerged] = useState<AnalysisOutput | undefined>(undefined);
+  // Track which analysisId the current poll loop is for — avoid duplicate loops
+  const pollingIdRef = useRef<string | null>(null);
+
+  const analysisId = fastQuery.data?.analysisId ?? null;
+  const hasReport = fastQuery.data?.report !== null;
 
   useEffect(() => {
     if (!fastQuery.data) { setMerged(undefined); return; }
-    // Reset merged whenever a fresh fast result arrives
     setMerged(fastQuery.data);
+  }, [fastQuery.data]);
 
-    if (fastQuery.data.report !== null) return; // LLM already included
+  useEffect(() => {
+    if (!analysisId || hasReport) return;
+    // Already polling for this id — don't start a second loop
+    if (pollingIdRef.current === analysisId) return;
 
-    const id = fastQuery.data.analysisId;
+    pollingIdRef.current = analysisId;
     let active = true;
 
     const poll = async () => {
       for (let i = 0; i < 60 && active; i++) {
         await new Promise(r => setTimeout(r, 2000));
         try {
-          const result = await pollAnalysisReport(id);
+          const result = await pollAnalysisReport(analysisId);
           if (result !== null && result.report !== null && active) {
             setMerged(prev => prev ? { ...prev, report: result.report, model: result.model, promptVersion: result.promptVersion } : prev);
+            pollingIdRef.current = null;
             return;
           }
         } catch { /* keep polling */ }
       }
+      pollingIdRef.current = null;
     };
 
     poll();
     return () => { active = false; };
-  }, [fastQuery.data]);
+  }, [analysisId, hasReport]);
 
   return {
     data: merged,
