@@ -175,19 +175,26 @@ export async function generateReport(
 
   const userPrompt = buildUserPrompt(analysis);
 
+  // Metadata we already know — inject after parsing so LLM doesn't need to return them correctly
+  const knownMeta = { symbol: analysis.symbol, asOf: analysis.asOf, timeframe: '1D' as const };
+
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const raw = await provider.complete(userPrompt, SYSTEM_PROMPT);
       process.stderr.write(`[llm] attempt ${attempt + 1} raw (first 300): ${raw.slice(0, 300)}\n`);
       const parsed = extractJson(raw);
-      // If model wrapped the report, try common wrapper keys
+      // Collect candidates: root object + any direct child objects (handles model wrapping)
       const candidates = [parsed, ...(typeof parsed === 'object' && parsed !== null
         ? Object.values(parsed as Record<string, unknown>).filter(v => typeof v === 'object' && v !== null)
         : [])];
       let lastErr: unknown;
       for (const candidate of candidates) {
         try {
-          const validated = analysisReportSchema.parse(candidate);
+          // Merge known metadata before validating so LLM doesn't need to return them correctly
+          const merged = typeof candidate === 'object' && candidate !== null
+            ? { ...knownMeta, ...(candidate as Record<string, unknown>) }
+            : candidate;
+          const validated = analysisReportSchema.parse(merged);
           return { report: validated, promptVersion: PROMPT_VERSION, model: provider.providerName };
         } catch (e) { lastErr = e; }
       }
