@@ -99,7 +99,7 @@ export function AiAgentPanel({ report, model, symbol, isLoading = false }: Props
                   <div>
                     <p className="text-[10px] text-slate-500 mb-0.5 uppercase tracking-wider">Tín hiệu thiết lập</p>
                     <p className="text-sm font-bold" style={{ color: m.color }}>{m.label}</p>
-                    <p className="text-xs text-slate-400 mt-0.5 leading-relaxed line-clamp-2">{report.setup.explanation}</p>
+                    <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{report.setup.explanation}</p>
                   </div>
                 </div>
               );
