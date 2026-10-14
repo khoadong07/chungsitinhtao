@@ -44,6 +44,21 @@ export interface NewsItem {
   taggedSymbols: Array<{ symbol: string; price: number; change: number; percentChange: number }>;
 }
 
+function decodeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/<[^>]*>/g, '')   // strip remaining HTML tags
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 const FIREANT_HEADERS = {
   'accept': 'application/json, text/plain, */*',
   'accept-language': 'en,vi;q=0.9',
@@ -84,8 +99,8 @@ async function _fetchPosts(symbol: string, type: 0 | 1, limit: number): Promise<
 
   return (data as RawPost[]).map(p => ({
     id: p.postID,
-    title: p.title ?? '',
-    description: p.description ?? p.content ?? '',
+    title: decodeHtml(p.title),
+    description: decodeHtml(p.description ?? p.content),
     date: p.date,
     sourceName: p.postSource?.name ?? (p.user as { name?: string } | null)?.name ?? 'FireAnt',
     sourceUrl: p.postSource?.url ?? 'https://fireant.vn',
