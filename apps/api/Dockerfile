@@ -30,10 +30,11 @@ RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/packages/shared ./packages/shared
+# Copy generated Prisma client (binary engine) from builder
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY apps/api/prisma ./apps/api/prisma
 
 WORKDIR /app/apps/api
-RUN pnpm exec prisma generate
 
 EXPOSE 4000
 CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/server.js"]
