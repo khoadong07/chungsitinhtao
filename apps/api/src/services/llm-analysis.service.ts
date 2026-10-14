@@ -178,7 +178,7 @@ export async function generateReport(
   // Metadata we already know — inject after parsing so LLM doesn't need to return them correctly
   const knownMeta = { symbol: analysis.symbol, asOf: analysis.asOf, timeframe: '1D' as const };
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const raw = await provider.complete(userPrompt, SYSTEM_PROMPT);
       process.stderr.write(`[llm] attempt ${attempt + 1} raw (first 300): ${raw.slice(0, 300)}\n`);
@@ -201,7 +201,7 @@ export async function generateReport(
       throw lastErr;
     } catch (err) {
       process.stderr.write(`[llm] attempt ${attempt + 1} failed: ${err instanceof Error ? err.message : String(err)}\n`);
-      if (attempt === 1) break;
+      if (attempt === 2) break;
     }
   }
 

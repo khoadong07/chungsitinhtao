@@ -41,6 +41,13 @@ export class OpenAiLlmProvider implements LlmProvider {
         signal: controller.signal,
       });
 
+      if (res.status === 429) {
+        const retryAfter = res.headers.get('retry-after');
+        const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 5000;
+        process.stderr.write(`[llm] 429 rate limit — retrying after ${waitMs}ms\n`);
+        await new Promise(r => setTimeout(r, waitMs));
+        throw new AppError('LLM_RATE_LIMIT', 'Rate limited — will retry', 429);
+      }
       if (!res.ok) {
         throw new AppError('LLM_API_ERROR', `OpenAI API error: ${res.status}`, 502);
       }

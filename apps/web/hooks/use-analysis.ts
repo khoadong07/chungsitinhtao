@@ -33,7 +33,7 @@ export function useAnalysis(params: {
     let active = true;
 
     const poll = async () => {
-      for (let i = 0; i < 30 && active; i++) {
+      for (let i = 0; i < 60 && active; i++) {
         await new Promise(r => setTimeout(r, 2000));
         try {
           const result = await pollAnalysisReport(id);
