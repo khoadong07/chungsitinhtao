@@ -9,13 +9,24 @@ export const PROMPT_VERSION = '1.0.0';
 
 // Extract JSON from LLM response, handling markdown fences and surrounding text
 function extractJson(raw: string): unknown {
-  // Strip markdown code fences at start/end
   const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
   try { return JSON.parse(stripped); } catch {}
   // Find outermost {...} block if LLM added surrounding text
   const match = raw.match(/\{[\s\S]*\}/);
   if (match) { try { return JSON.parse(match[0]); } catch {} }
   throw new SyntaxError('No valid JSON object found in LLM response');
+}
+
+// Collect all nested objects (BFS up to depth 6) — handles models that wrap their output
+function collectAllObjects(val: unknown, depth = 0): unknown[] {
+  if (depth > 6 || typeof val !== 'object' || val === null) return [];
+  const results: unknown[] = [val];
+  for (const child of Object.values(val as Record<string, unknown>)) {
+    if (typeof child === 'object' && child !== null) {
+      results.push(...collectAllObjects(child, depth + 1));
+    }
+  }
+  return results;
 }
 
 let _llmProvider: LlmProvider | null | undefined = undefined;
@@ -183,10 +194,8 @@ export async function generateReport(
       const raw = await provider.complete(userPrompt, SYSTEM_PROMPT);
       process.stderr.write(`[llm] attempt ${attempt + 1} raw (first 300): ${raw.slice(0, 300)}\n`);
       const parsed = extractJson(raw);
-      // Collect candidates: root object + any direct child objects (handles model wrapping)
-      const candidates = [parsed, ...(typeof parsed === 'object' && parsed !== null
-        ? Object.values(parsed as Record<string, unknown>).filter(v => typeof v === 'object' && v !== null)
-        : [])];
+      // Collect all nested objects at any depth — handles models that wrap their output
+      const candidates = collectAllObjects(parsed);
       let lastErr: unknown;
       for (const candidate of candidates) {
         try {
