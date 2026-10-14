@@ -33,7 +33,9 @@ services:
       dockerfile: apps/web/Dockerfile
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-10001}:3000"
+      # Loopback only: nginx proxies stock.khoadong.io.vn to this port.
+      # Not published on 0.0.0.0, so the app cannot be reached by bare IP.
+      - "127.0.0.1:${WEB_PORT:-10001}:3000"
     env_file: .env
     environment:
       API_URL: http://api:4000
