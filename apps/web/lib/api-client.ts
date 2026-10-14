@@ -1,6 +1,7 @@
 import type { AnalysisOutput } from './types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+// Empty string → browser uses same-origin relative paths, proxied by Next.js rewrites to api:4000
+const API_BASE = '';
 
 export async function pollAnalysisReport(analysisId: string): Promise<Pick<AnalysisOutput, 'report' | 'model' | 'promptVersion'> | null> {
   const res = await fetch(`${API_BASE}/api/v1/analysis/${encodeURIComponent(analysisId)}`);

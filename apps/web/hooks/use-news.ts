@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_BASE = '';
 
 export interface NewsItem {
   id: number;

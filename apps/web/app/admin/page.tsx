@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = '';
 
 type FieldType = 'text' | 'number' | 'select';
 interface KeyMeta { label: string; description: string; type: FieldType; options?: string[] }
