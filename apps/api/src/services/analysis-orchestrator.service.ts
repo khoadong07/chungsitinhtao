@@ -35,7 +35,7 @@ export interface AnalysisOutput {
 export async function runAnalysis(input: AnalysisInput): Promise<AnalysisOutput> {
   const [marketData, fundamental] = await Promise.all([
     getCandles({ symbol: input.symbol, timeframe: input.timeframe, limit: input.lookback }),
-    getBsiFundamental(input.symbol, 8000).catch(() => null),
+    getBsiFundamental(input.symbol, 15000).catch(() => null),
   ]);
 
   const technical = calculateIndicators(marketData.candles);

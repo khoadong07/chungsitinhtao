@@ -198,15 +198,7 @@ async function fetchAllFilters(timeoutMs: number): Promise<BsiStockFilter[]> {
   }
 }
 
-async function fetchValuation(
-  symbol: string,
-  filters: BsiStockFilter[],
-  stockRow: BsiStockFilter,
-  timeoutMs: number,
-): Promise<BsiValuation> {
-  const cached = valuationCache.get(symbol);
-  if (cached && cached.expiresAt > Date.now()) return cached.data;
-
+async function fetchValuationRaw(symbol: string, timeoutMs: number): Promise<Record<string, unknown>> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -215,9 +207,7 @@ async function fetchValuation(
     if (!res.ok) throw new Error(`BSI valuation HTTP ${res.status}`);
     const body = (await res.json()) as { status: number; data: Record<string, unknown> | null };
     if (body.status !== 200 || !body.data) throw new Error('BSI valuation bad response');
-    const data = mapValuation(body.data, filters, stockRow);
-    valuationCache.set(symbol, { data, expiresAt: Date.now() + CACHE_TTL_MS });
-    return data;
+    return body.data;
   } finally {
     clearTimeout(timer);
   }
@@ -225,14 +215,32 @@ async function fetchValuation(
 
 export async function getBsiFundamental(
   symbol: string,
-  timeoutMs = 10000,
+  timeoutMs = 15000,
 ): Promise<BsiFundamentalData | null> {
   try {
-    const filters = await fetchAllFilters(timeoutMs);
+    // Check valuation cache before fetching (avoids parallel fetch if already cached)
+    const cachedVal = valuationCache.get(symbol);
+
+    // Fetch filter + valuation in parallel — each takes ~3-4s so sequential would risk timeout
+    const [filters, rawValuation] = await Promise.all([
+      fetchAllFilters(timeoutMs),
+      cachedVal && cachedVal.expiresAt > Date.now()
+        ? Promise.resolve(null) // will use cache below
+        : fetchValuationRaw(symbol, timeoutMs),
+    ]);
+
     const row = filters.find(f => f.code === symbol);
     if (!row) return null;
 
-    const valuation = await fetchValuation(symbol, filters, row, timeoutMs);
+    let valuation: BsiValuation;
+    if (cachedVal && cachedVal.expiresAt > Date.now()) {
+      valuation = cachedVal.data;
+    } else if (rawValuation) {
+      valuation = mapValuation(rawValuation, filters, row);
+      valuationCache.set(symbol, { data: valuation, expiresAt: Date.now() + CACHE_TTL_MS });
+    } else {
+      return null;
+    }
 
     return { filter: row, valuation, fetchedAt: new Date().toISOString() };
   } catch {
