@@ -134,88 +134,89 @@ function mapFilterRow(raw: Record<string, unknown>): BsiStockFilter {
   };
 }
 
-function industryAvg(
-  filters: BsiStockFilter[],
-  industry: string,
-  field: 'pe' | 'pb',
-): number | null {
-  // Exclude outliers: pe/pb must be > 0 and < 100 to avoid distortion
-  const MAX_RATIO = 100;
-  const values = filters
-    .filter(f => f.industry === industry && f[field] > 0 && f[field] < MAX_RATIO)
-    .map(f => f[field]);
-  if (values.length === 0) return null;
-  return values.reduce((a, b) => a + b, 0) / values.length;
+
+function pick(arr: number[], idx: number): number | null {
+  const v = arr[idx];
+  return typeof v === 'number' && v > 0 ? v : null;
 }
 
-function mapValuation(
-  raw: Record<string, unknown>,
-  filters: BsiStockFilter[],
-  stockRow: BsiStockFilter,
-): BsiValuation {
-  const estimated = (raw['estimatedPriceStock'] as number[] | undefined) ?? [];
-  const { eps, bvps, industry } = stockRow;
-
-  // Compute fair value = industry-average PE/PB × current EPS/BVPS
-  const avgPe = industryAvg(filters, industry, 'pe');
-  const avgPb = industryAvg(filters, industry, 'pb');
-  const peFairValue = avgPe && eps > 0 ? avgPe * eps : null;
-  const pbFairValue = avgPb && bvps > 0 ? avgPb * bvps : null;
-
-  // estimatedPriceStock[2]=EPS-based, [3]=BVPS-based growth estimates from BSI
-  const peEstimated = estimated[2] && estimated[2] > 0 ? avgPe && estimated[2] * avgPe / (eps || 1) : null;
-  const pbEstimated = estimated[3] && estimated[3] > 0 ? avgPb && estimated[3] * avgPb / (bvps || 1) : null;
+function mapValuation(raw: Record<string, unknown>): BsiValuation {
+  // With average=1, BSI returns pre-computed fair values:
+  // reasonablePriceStock: [avgPE, avgPB, EPS, BVPS, PE_fairValue, PB_fairValue]
+  // estimatedPriceStock:   [estPE, estPB, estEPS, estBVPS, est_PE_fair, est_PB_fair]
+  const reasonable = (raw['reasonablePriceStock'] as number[] | undefined) ?? [];
+  const estimated  = (raw['estimatedPriceStock']  as number[] | undefined) ?? [];
 
   return {
     closePriceVnd: num(raw['closePrice']),
     averageGrowthLNST: raw['averageGrowthLNST'] != null ? num(raw['averageGrowthLNST']) : null,
-    peFairValue,
-    pbFairValue,
-    peEstimated: typeof peEstimated === 'number' && peEstimated > 0 ? peEstimated : null,
-    pbEstimated: typeof pbEstimated === 'number' && pbEstimated > 0 ? pbEstimated : null,
+    peFairValue:  pick(reasonable, 4),
+    pbFairValue:  pick(reasonable, 5),
+    peEstimated:  pick(estimated,  4),
+    pbEstimated:  pick(estimated,  5),
   };
+}
+
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 800): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      // Don't retry on AbortError (timeout) — it won't get faster
+      if (err instanceof Error && err.name === 'AbortError') throw err;
+      if (i < retries) await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  throw lastErr;
 }
 
 async function fetchAllFilters(timeoutMs: number): Promise<BsiStockFilter[]> {
   const cached = filterCache.get('all');
   if (cached && cached.expiresAt > Date.now()) return cached.data;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${BSI_BASE}/api/v1/filter`, {
-      headers: BSI_HEADERS,
-      signal: controller.signal,
-    });
-    if (!res.ok) throw new Error(`BSI filter HTTP ${res.status}`);
-    const body = (await res.json()) as { status: number; data: Record<string, unknown>[] };
-    if (body.status !== 200 || !Array.isArray(body.data)) throw new Error('BSI filter bad response');
-    const data = body.data.map(mapFilterRow);
-    filterCache.set('all', { data, expiresAt: Date.now() + CACHE_TTL_MS });
-    return data;
-  } finally {
-    clearTimeout(timer);
-  }
+  return withRetry(async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${BSI_BASE}/api/v1/filter`, {
+        headers: BSI_HEADERS,
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`BSI filter HTTP ${res.status}`);
+      const body = (await res.json()) as { status: number; data: Record<string, unknown>[] };
+      if (body.status !== 200 || !Array.isArray(body.data)) throw new Error('BSI filter bad response');
+      const data = body.data.map(mapFilterRow);
+      filterCache.set('all', { data, expiresAt: Date.now() + CACHE_TTL_MS });
+      return data;
+    } finally {
+      clearTimeout(timer);
+    }
+  });
 }
 
 async function fetchValuationRaw(symbol: string, timeoutMs: number): Promise<Record<string, unknown>> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const url = `${BSI_BASE}/api/v1/investment/stock-valuation?stock=${encodeURIComponent(symbol)}`;
-    const res = await fetch(url, { headers: BSI_HEADERS, signal: controller.signal });
-    if (!res.ok) throw new Error(`BSI valuation HTTP ${res.status}`);
-    const body = (await res.json()) as { status: number; data: Record<string, unknown> | null };
-    if (body.status !== 200 || !body.data) throw new Error('BSI valuation bad response');
-    return body.data;
-  } finally {
-    clearTimeout(timer);
-  }
+  return withRetry(async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      // average=1 returns stock's own 1Y avg P/E, P/B and pre-computed fair values
+      const url = `${BSI_BASE}/api/v1/investment/stock-valuation?stock=${encodeURIComponent(symbol)}&average=1&perWelfareFund=0.05`;
+      const res = await fetch(url, { headers: BSI_HEADERS, signal: controller.signal });
+      if (!res.ok) throw new Error(`BSI valuation HTTP ${res.status}`);
+      const body = (await res.json()) as { status: number; data: Record<string, unknown> | null };
+      if (body.status !== 200 || !body.data) throw new Error('BSI valuation bad response');
+      return body.data;
+    } finally {
+      clearTimeout(timer);
+    }
+  });
 }
 
 export async function getBsiFundamental(
   symbol: string,
-  timeoutMs = 15000,
+  timeoutMs = 20000,
 ): Promise<BsiFundamentalData | null> {
   try {
     // Check valuation cache before fetching (avoids parallel fetch if already cached)
@@ -236,7 +237,7 @@ export async function getBsiFundamental(
     if (cachedVal && cachedVal.expiresAt > Date.now()) {
       valuation = cachedVal.data;
     } else if (rawValuation) {
-      valuation = mapValuation(rawValuation, filters, row);
+      valuation = mapValuation(rawValuation);
       valuationCache.set(symbol, { data: valuation, expiresAt: Date.now() + CACHE_TTL_MS });
     } else {
       return null;

@@ -12,7 +12,7 @@ export default function HomePage() {
   const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
   const [inputVal, setInputVal] = useState(DEFAULT_SYMBOL);
   const [horizon, setHorizon] = useState<'swing' | 'position'>('swing');
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(true);
   const [inputError, setInputError] = useState('');
 
   const { data, isLoading, isReportLoading, isError, error: queryError, refetch, startAiAgent, aiRequested } = useAnalysis({
@@ -91,10 +91,12 @@ export default function HomePage() {
                   border: `1px solid ${inputError ? 'rgba(244,63,94,0.5)' : 'rgba(255,255,255,0.08)'}`,
                   letterSpacing: '0.05em',
                 }}
+                id="symbol" name="symbol"
                 maxLength={10} autoComplete="off" spellCheck={false}
               />
             </div>
             <select
+              id="horizon" name="horizon"
               value={horizon}
               onChange={e => setHorizon(e.target.value as 'swing' | 'position')}
               className="text-[11px] font-medium text-slate-400 py-1.5 px-2 rounded-xl focus:outline-none shrink-0 cursor-pointer"

@@ -33,6 +33,7 @@ export function StockSearch({ onSubmit, loading }: StockSearchProps) {
           onChange={e => { setSymbol(e.target.value); setError(''); }}
           placeholder="VD: MBB, FPT, HPG"
           className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 uppercase w-full sm:w-40"
+          id="symbol" name="symbol"
           maxLength={10}
           autoComplete="off"
           spellCheck={false}
@@ -43,6 +44,7 @@ export function StockSearch({ onSubmit, loading }: StockSearchProps) {
       <div className="flex flex-col gap-1">
         <label className="text-xs text-gray-400 uppercase tracking-wide">Khung thời gian</label>
         <select
+          id="timeframe" name="timeframe"
           disabled
           className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-400 cursor-not-allowed"
         >
@@ -53,6 +55,7 @@ export function StockSearch({ onSubmit, loading }: StockSearchProps) {
       <div className="flex flex-col gap-1">
         <label className="text-xs text-gray-400 uppercase tracking-wide">Horizon</label>
         <select
+          id="horizon" name="horizon"
           value={horizon}
           onChange={e => setHorizon(e.target.value as 'swing' | 'position')}
           className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500"

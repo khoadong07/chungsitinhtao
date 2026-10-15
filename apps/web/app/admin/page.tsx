@@ -92,6 +92,7 @@ function ConfigRow({
         <div className="flex items-center gap-2 sm:w-auto w-full">
           {meta.type === 'select' && meta.options ? (
             <select
+              id={configKey} name={configKey}
               value={value}
               onChange={e => handleChange(e.target.value)}
               className="flex-1 sm:w-40 px-3 py-1.5 rounded-lg text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 cursor-pointer"
@@ -101,6 +102,7 @@ function ConfigRow({
             </select>
           ) : (
             <input
+              id={configKey} name={configKey}
               type={meta.type === 'number' ? 'number' : 'text'}
               value={value}
               onChange={e => handleChange(e.target.value)}
