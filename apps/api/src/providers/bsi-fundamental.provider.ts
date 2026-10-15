@@ -134,16 +134,45 @@ function mapFilterRow(raw: Record<string, unknown>): BsiStockFilter {
   };
 }
 
-function mapValuation(raw: Record<string, unknown>): BsiValuation {
-  const reasonable = (raw['reasonablePriceStock'] as number[] | undefined) ?? [];
+function industryAvg(
+  filters: BsiStockFilter[],
+  industry: string,
+  field: 'pe' | 'pb',
+): number | null {
+  // Exclude outliers: pe/pb must be > 0 and < 100 to avoid distortion
+  const MAX_RATIO = 100;
+  const values = filters
+    .filter(f => f.industry === industry && f[field] > 0 && f[field] < MAX_RATIO)
+    .map(f => f[field]);
+  if (values.length === 0) return null;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function mapValuation(
+  raw: Record<string, unknown>,
+  filters: BsiStockFilter[],
+  stockRow: BsiStockFilter,
+): BsiValuation {
   const estimated = (raw['estimatedPriceStock'] as number[] | undefined) ?? [];
+  const { eps, bvps, industry } = stockRow;
+
+  // Compute fair value = industry-average PE/PB × current EPS/BVPS
+  const avgPe = industryAvg(filters, industry, 'pe');
+  const avgPb = industryAvg(filters, industry, 'pb');
+  const peFairValue = avgPe && eps > 0 ? avgPe * eps : null;
+  const pbFairValue = avgPb && bvps > 0 ? avgPb * bvps : null;
+
+  // estimatedPriceStock[2]=EPS-based, [3]=BVPS-based growth estimates from BSI
+  const peEstimated = estimated[2] && estimated[2] > 0 ? avgPe && estimated[2] * avgPe / (eps || 1) : null;
+  const pbEstimated = estimated[3] && estimated[3] > 0 ? avgPb && estimated[3] * avgPb / (bvps || 1) : null;
+
   return {
     closePriceVnd: num(raw['closePrice']),
     averageGrowthLNST: raw['averageGrowthLNST'] != null ? num(raw['averageGrowthLNST']) : null,
-    peFairValue: reasonable[2] && reasonable[2] > 0 ? reasonable[2] : null,
-    pbFairValue: reasonable[3] && reasonable[3] > 0 ? reasonable[3] : null,
-    peEstimated: estimated[2] && estimated[2] > 0 ? estimated[2] : null,
-    pbEstimated: estimated[3] && estimated[3] > 0 ? estimated[3] : null,
+    peFairValue,
+    pbFairValue,
+    peEstimated: typeof peEstimated === 'number' && peEstimated > 0 ? peEstimated : null,
+    pbEstimated: typeof pbEstimated === 'number' && pbEstimated > 0 ? pbEstimated : null,
   };
 }
 
@@ -169,7 +198,12 @@ async function fetchAllFilters(timeoutMs: number): Promise<BsiStockFilter[]> {
   }
 }
 
-async function fetchValuation(symbol: string, timeoutMs: number): Promise<BsiValuation> {
+async function fetchValuation(
+  symbol: string,
+  filters: BsiStockFilter[],
+  stockRow: BsiStockFilter,
+  timeoutMs: number,
+): Promise<BsiValuation> {
   const cached = valuationCache.get(symbol);
   if (cached && cached.expiresAt > Date.now()) return cached.data;
 
@@ -181,7 +215,7 @@ async function fetchValuation(symbol: string, timeoutMs: number): Promise<BsiVal
     if (!res.ok) throw new Error(`BSI valuation HTTP ${res.status}`);
     const body = (await res.json()) as { status: number; data: Record<string, unknown> | null };
     if (body.status !== 200 || !body.data) throw new Error('BSI valuation bad response');
-    const data = mapValuation(body.data);
+    const data = mapValuation(body.data, filters, stockRow);
     valuationCache.set(symbol, { data, expiresAt: Date.now() + CACHE_TTL_MS });
     return data;
   } finally {
@@ -198,7 +232,7 @@ export async function getBsiFundamental(
     const row = filters.find(f => f.code === symbol);
     if (!row) return null;
 
-    const valuation = await fetchValuation(symbol, timeoutMs);
+    const valuation = await fetchValuation(symbol, filters, row, timeoutMs);
 
     return { filter: row, valuation, fetchedAt: new Date().toISOString() };
   } catch {

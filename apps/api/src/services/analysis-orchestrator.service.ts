@@ -43,6 +43,24 @@ export async function runAnalysis(input: AnalysisInput): Promise<AnalysisOutput>
   const recentHistogram = candles.slice(-5).map(c => c.macdHistogram);
   const decision = runDecisionEngine(snapshot, recentHistogram, priceZones, dataQuality);
 
+  // Override BSI fair values using 1Y average price from candle data:
+  // avg_PE = avg_price_1Y / EPS → PE fair value = avg_PE × EPS = avg_price_1Y (in VND)
+  // This gives meaningful "historical average valuation" compared to current price.
+  let adjustedFundamental = fundamental;
+  if (fundamental && candles.length >= 20) {
+    const avgClose1Y = candles.reduce((s, c) => s + c.close, 0) / candles.length;
+    const avgPriceVnd = avgClose1Y * 1000; // SSI prices in thousands VND
+    const { eps, bvps } = fundamental.filter;
+    adjustedFundamental = {
+      ...fundamental,
+      valuation: {
+        ...fundamental.valuation,
+        peFairValue: eps > 0 ? avgPriceVnd : null,
+        pbFairValue: bvps > 0 ? avgPriceVnd : null,
+      },
+    };
+  }
+
   const warnings: string[] = [];
   if (marketData.source.isMock)  warnings.push('Data is simulated (mock mode). Do not use for real trading decisions.');
   if (marketData.source.isStale) warnings.push('Data may be stale. Refresh for latest analysis.');
@@ -57,7 +75,7 @@ export async function runAnalysis(input: AnalysisInput): Promise<AnalysisOutput>
     technical,
     decision,
     priceZones,
-    fundamental,
+    fundamental: adjustedFundamental,
     report: null,
     promptVersion: null,
     model: null,
