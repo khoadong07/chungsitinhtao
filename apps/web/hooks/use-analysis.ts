@@ -10,8 +10,11 @@ export function useAnalysis(params: {
   holdingHorizon: 'swing' | 'position';
   enabled: boolean;
 }) {
+  // Include today's date in queryKey so cache invalidates automatically each day
+  const today = new Date().toISOString().slice(0, 10);
+
   const fastQuery = useQuery({
-    queryKey: ['analysis', params.symbol, params.holdingHorizon],
+    queryKey: ['analysis', params.symbol, params.holdingHorizon, today],
     queryFn: () => runAnalysis({ symbol: params.symbol, holdingHorizon: params.holdingHorizon, withLlm: false }),
     enabled: params.enabled && !!params.symbol,
     staleTime: 5 * 60 * 1000,
