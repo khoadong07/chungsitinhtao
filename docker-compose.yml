@@ -23,6 +23,9 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-stockanalyzer}
       API_PORT: "4000"
+    ports:
+      # Loopback only: for local pnpm dev (Next.js connects via API_URL=http://localhost:4000)
+      - "127.0.0.1:4000:4000"
     depends_on:
       postgres:
         condition: service_healthy
