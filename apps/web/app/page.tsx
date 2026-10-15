@@ -12,10 +12,10 @@ export default function HomePage() {
   const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
   const [inputVal, setInputVal] = useState(DEFAULT_SYMBOL);
   const [horizon, setHorizon] = useState<'swing' | 'position'>('swing');
-  const [submitted, setSubmitted] = useState(true); // auto-load ACB
+  const [submitted, setSubmitted] = useState(false);
   const [inputError, setInputError] = useState('');
 
-  const { data, isLoading, isReportLoading, isError, error: queryError, refetch } = useAnalysis({
+  const { data, isLoading, isReportLoading, isError, error: queryError, refetch, startAiAgent, aiRequested } = useAnalysis({
     symbol,
     holdingHorizon: horizon,
     enabled: submitted,
@@ -208,7 +208,7 @@ export default function HomePage() {
 
         {/* Dashboard */}
         {data && !isLoading && (
-          <AnalysisReport data={data} onRetry={() => void refetch()} isReportLoading={isReportLoading} />
+          <AnalysisReport data={data} onRetry={() => void refetch()} isReportLoading={isReportLoading} onStartAiAgent={() => void startAiAgent()} aiRequested={aiRequested} />
         )}
       </main>
     </div>

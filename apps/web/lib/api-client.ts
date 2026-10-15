@@ -32,6 +32,7 @@ export async function runAnalysis(params: {
   symbol: string;
   lookback?: number;
   holdingHorizon?: 'swing' | 'position';
+  withLlm?: boolean;
 }): Promise<AnalysisOutput> {
   const res = await fetch(`${API_BASE}/api/v1/analysis`, {
     method: 'POST',
@@ -42,6 +43,7 @@ export async function runAnalysis(params: {
       lookback: params.lookback ?? 250,
       analysisType: 'technical',
       holdingHorizon: params.holdingHorizon ?? 'swing',
+      withLlm: params.withLlm ?? false,
     }),
   });
   if (!res.ok) {
@@ -50,4 +52,10 @@ export async function runAnalysis(params: {
     throw new Error(msg);
   }
   return res.json() as Promise<AnalysisOutput>;
+}
+
+export async function triggerAiReport(analysisId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/v1/analysis/${encodeURIComponent(analysisId)}/report`, {
+    method: 'POST',
+  });
 }

@@ -5,6 +5,8 @@ interface Props {
   model: string | null;
   symbol: string;
   isLoading?: boolean;
+  onStart?: () => void;
+  aiRequested?: boolean;
 }
 
 const MODEL_LABEL: Record<string, string> = {
@@ -23,7 +25,7 @@ function setupMeta(c: string): { label: string; icon: string; color: string; bg:
   return map[c] ?? { label: c, icon: '●', color: '#94a3b8', bg: 'rgba(255,255,255,0.04)' };
 }
 
-export function AiAgentPanel({ report, model, symbol, isLoading = false }: Props) {
+export function AiAgentPanel({ report, model, symbol, isLoading = false, onStart, aiRequested = false }: Props) {
   const isAi = model !== null && !isLoading;
   const modelLabel = model ? (MODEL_LABEL[model] ?? model) : 'Fallback';
 
@@ -64,7 +66,29 @@ export function AiAgentPanel({ report, model, symbol, isLoading = false }: Props
       </div>
 
       <div className="p-5 space-y-4">
-        {isLoading ? (
+        {/* Not yet requested — show trigger button */}
+        {!aiRequested && !isLoading && !report && onStart ? (
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,rgba(124,58,237,0.15),rgba(6,182,212,0.08))', border: '1px solid rgba(124,58,237,0.2)' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+                <path d="M12 8v4l3 3"/>
+                <circle cx="20" cy="4" r="2.5" fill="#22d3ee" stroke="none"/>
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-slate-300 mb-1">Phân tích AI chuyên sâu</p>
+              <p className="text-xs text-slate-500 leading-relaxed">Xu hướng · Kịch bản · Rủi ro · Nhận định</p>
+            </div>
+            <button
+              onClick={onStart}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 cursor-pointer"
+              style={{ background: 'linear-gradient(135deg,#6d28d9,#7c3aed)', boxShadow: '0 2px 16px rgba(124,58,237,0.35)' }}
+            >
+              Chạy AI Agent
+            </button>
+          </div>
+        ) : isLoading ? (
           <div className="space-y-3 py-2">
             <div className="skeleton h-4 rounded-lg w-full" />
             <div className="skeleton h-4 rounded-lg w-4/5" />

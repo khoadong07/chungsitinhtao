@@ -1,9 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { runAnalysis, pollAnalysisReport } from '../lib/api-client';
+import { runAnalysis, pollAnalysisReport, triggerAiReport } from '../lib/api-client';
 import type { AnalysisOutput } from '../lib/types';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 export function useAnalysis(params: {
   symbol: string;
@@ -12,9 +12,8 @@ export function useAnalysis(params: {
 }) {
   const fastQuery = useQuery({
     queryKey: ['analysis', params.symbol, params.holdingHorizon],
-    queryFn: () => runAnalysis({ symbol: params.symbol, holdingHorizon: params.holdingHorizon }),
+    queryFn: () => runAnalysis({ symbol: params.symbol, holdingHorizon: params.holdingHorizon, withLlm: false }),
     enabled: params.enabled && !!params.symbol,
-    // Keep data fresh for 5 minutes — prevents refetch on window focus from re-POST-ing analysis
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 1,
@@ -22,20 +21,21 @@ export function useAnalysis(params: {
   });
 
   const [merged, setMerged] = useState<AnalysisOutput | undefined>(undefined);
-  // Track which analysisId the current poll loop is for — avoid duplicate loops
+  const [aiRequested, setAiRequested] = useState(false);
   const pollingIdRef = useRef<string | null>(null);
 
   const analysisId = fastQuery.data?.analysisId ?? null;
-  const hasReport = fastQuery.data?.report !== null;
+  const mergedReport = merged?.report ?? null;
 
   useEffect(() => {
-    if (!fastQuery.data) { setMerged(undefined); return; }
+    if (!fastQuery.data) { setMerged(undefined); setAiRequested(false); return; }
     setMerged(fastQuery.data);
+    setAiRequested(false);
   }, [fastQuery.data]);
 
+  // Poll only when AI was explicitly requested and report not yet arrived
   useEffect(() => {
-    if (!analysisId || hasReport) return;
-    // Already polling for this id — don't start a second loop
+    if (!analysisId || !aiRequested || mergedReport !== null) return;
     if (pollingIdRef.current === analysisId) return;
 
     pollingIdRef.current = analysisId;
@@ -58,7 +58,13 @@ export function useAnalysis(params: {
 
     poll();
     return () => { active = false; };
-  }, [analysisId, hasReport]);
+  }, [analysisId, aiRequested, mergedReport]);
+
+  const startAiAgent = useCallback(async () => {
+    if (!analysisId || mergedReport !== null) return;
+    setAiRequested(true);
+    await triggerAiReport(analysisId).catch(() => {/* server may already be running */});
+  }, [analysisId, mergedReport]);
 
   return {
     data: merged,
@@ -66,6 +72,8 @@ export function useAnalysis(params: {
     isError: fastQuery.isError,
     error: fastQuery.error,
     refetch: fastQuery.refetch,
-    isReportLoading: merged !== undefined && merged.report === null,
+    isReportLoading: aiRequested && mergedReport === null,
+    startAiAgent,
+    aiRequested,
   };
 }

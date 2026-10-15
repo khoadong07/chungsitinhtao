@@ -13,6 +13,7 @@ export interface AnalysisInput {
   timeframe: '1D';
   lookback: number;
   holdingHorizon: 'swing' | 'position';
+  withLlm?: boolean;
 }
 
 export interface AnalysisOutput {
@@ -91,12 +92,20 @@ export async function runAnalysis(input: AnalysisInput): Promise<AnalysisOutput>
     }
   }
 
-  // Phase 2: run LLM in background — updates DB when done, no client wait
-  enrichWithLlmReport(fastResult).catch(err => {
-    process.stderr.write(`[llm-bg] ${fastResult.analysisId}: ${err instanceof Error ? err.message : String(err)}\n`);
-  });
+  // Phase 2: run LLM in background only when requested
+  if (input.withLlm) {
+    enrichWithLlmReport(fastResult).catch(err => {
+      process.stderr.write(`[llm-bg] ${fastResult.analysisId}: ${err instanceof Error ? err.message : String(err)}\n`);
+    });
+  }
 
   return fastResult;
+}
+
+export async function triggerLlmEnrichment(analysisId: string, base: AnalysisOutput): Promise<void> {
+  enrichWithLlmReport(base).catch(err => {
+    process.stderr.write(`[llm-bg] ${analysisId}: ${err instanceof Error ? err.message : String(err)}\n`);
+  });
 }
 
 async function enrichWithLlmReport(base: AnalysisOutput): Promise<void> {

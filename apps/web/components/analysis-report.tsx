@@ -12,7 +12,7 @@ import { CommunityWidget } from './community-widget';
 
 const CandlestickChart = dynamic(() => import('./candlestick-chart'), { ssr: false });
 
-interface Props { data: AnalysisOutput; onRetry: () => void; isReportLoading?: boolean; }
+interface Props { data: AnalysisOutput; onRetry: () => void; isReportLoading?: boolean; onStartAiAgent?: () => void; aiRequested?: boolean; }
 
 function fmt(v: number) {
   return v.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -68,7 +68,7 @@ function PriceZones({ zones }: { zones: AnalysisOutput['priceZones'] }) {
   );
 }
 
-export function AnalysisReport({ data, onRetry, isReportLoading = false }: Props) {
+export function AnalysisReport({ data, onRetry, isReportLoading = false, onStartAiAgent, aiRequested = false }: Props) {
   const { dataSource, technical, decision, priceZones, warnings } = data;
   const asOf = new Date(data.asOf).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
   const close = technical.snapshot.close;
@@ -217,7 +217,7 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false }: Props
         {/* Right column */}
         <div className="space-y-4">
           <div className="anim-slide-r d-1">
-            <AiAgentPanel report={data.report} model={data.model} symbol={data.symbol} isLoading={isReportLoading} />
+            <AiAgentPanel report={data.report} model={data.model} symbol={data.symbol} isLoading={isReportLoading} onStart={onStartAiAgent} aiRequested={aiRequested} />
           </div>
           {data.fundamental && (
             <div className="anim-slide-r d-2">
