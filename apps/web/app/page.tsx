@@ -15,7 +15,7 @@ export default function HomePage() {
   const [submitted, setSubmitted] = useState(true);
   const [inputError, setInputError] = useState('');
 
-  const { data, isLoading, isReportLoading, isError, error: queryError, refetch, startAiAgent, aiRequested } = useAnalysis({
+  const { data, isLoading, isReportLoading, isError, error: queryError, refetch, startAiAgent, aiRequested, pollTimedOut } = useAnalysis({
     symbol,
     holdingHorizon: horizon,
     enabled: submitted,
@@ -210,7 +210,7 @@ export default function HomePage() {
 
         {/* Dashboard */}
         {data && !isLoading && (
-          <AnalysisReport data={data} onRetry={() => void refetch()} isReportLoading={isReportLoading} onStartAiAgent={() => void startAiAgent()} aiRequested={aiRequested} />
+          <AnalysisReport data={data} onRetry={() => void refetch()} isReportLoading={isReportLoading} onStartAiAgent={() => void startAiAgent()} aiRequested={aiRequested} pollTimedOut={pollTimedOut} />
         )}
       </main>
     </div>

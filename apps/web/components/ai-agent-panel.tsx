@@ -7,6 +7,7 @@ interface Props {
   isLoading?: boolean;
   onStart?: () => void;
   aiRequested?: boolean;
+  pollTimedOut?: boolean;
 }
 
 const MODEL_LABEL: Record<string, string> = {
@@ -25,7 +26,7 @@ function setupMeta(c: string): { label: string; icon: string; color: string; bg:
   return map[c] ?? { label: c, icon: '●', color: '#94a3b8', bg: 'rgba(255,255,255,0.04)' };
 }
 
-export function AiAgentPanel({ report, model, symbol, isLoading = false, onStart, aiRequested = false }: Props) {
+export function AiAgentPanel({ report, model, symbol, isLoading = false, onStart, aiRequested = false, pollTimedOut = false }: Props) {
   const isAi = model !== null && !isLoading;
   const modelLabel = model ? (MODEL_LABEL[model] ?? model) : 'Fallback';
 
@@ -66,8 +67,29 @@ export function AiAgentPanel({ report, model, symbol, isLoading = false, onStart
       </div>
 
       <div className="p-5 space-y-4">
-        {/* Not yet requested — show trigger button */}
-        {!aiRequested && !isLoading && !report && onStart ? (
+        {/* Poll timed out — show retry */}
+        {pollTimedOut && !report ? (
+          <div className="flex flex-col items-center gap-3 py-6">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-slate-300 mb-1">AI mất quá nhiều thời gian</p>
+              <p className="text-xs text-slate-500">Server đang bận hoặc LLM quá tải. Thử lại sau.</p>
+            </div>
+            {onStart && (
+              <button
+                onClick={onStart}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all active:scale-95 cursor-pointer"
+                style={{ background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.35)' }}
+              >
+                Thử lại
+              </button>
+            )}
+          </div>
+        ) : !aiRequested && !isLoading && !report && onStart ? (
           <div className="flex flex-col items-center gap-4 py-6">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,rgba(124,58,237,0.15),rgba(6,182,212,0.08))', border: '1px solid rgba(124,58,237,0.2)' }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round">

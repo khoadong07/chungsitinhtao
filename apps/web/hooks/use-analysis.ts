@@ -25,27 +25,30 @@ export function useAnalysis(params: {
 
   const [merged, setMerged] = useState<AnalysisOutput | undefined>(undefined);
   const [aiRequested, setAiRequested] = useState(false);
+  const [pollTimedOut, setPollTimedOut] = useState(false);
   const pollingIdRef = useRef<string | null>(null);
 
   const analysisId = fastQuery.data?.analysisId ?? null;
   const mergedReport = merged?.report ?? null;
 
   useEffect(() => {
-    if (!fastQuery.data) { setMerged(undefined); setAiRequested(false); return; }
+    if (!fastQuery.data) { setMerged(undefined); setAiRequested(false); setPollTimedOut(false); return; }
     setMerged(fastQuery.data);
     setAiRequested(false);
+    setPollTimedOut(false);
   }, [fastQuery.data]);
 
   // Poll only when AI was explicitly requested and report not yet arrived
   useEffect(() => {
-    if (!analysisId || !aiRequested || mergedReport !== null) return;
+    if (!analysisId || !aiRequested || mergedReport !== null || pollTimedOut) return;
     if (pollingIdRef.current === analysisId) return;
 
     pollingIdRef.current = analysisId;
     let active = true;
 
     const poll = async () => {
-      for (let i = 0; i < 60 && active; i++) {
+      // 90 attempts × 2s = 3 minutes max (backend LLM can take up to ~2min with retries)
+      for (let i = 0; i < 90 && active; i++) {
         await new Promise(r => setTimeout(r, 2000));
         try {
           const result = await pollAnalysisReport(analysisId);
@@ -56,15 +59,18 @@ export function useAnalysis(params: {
           }
         } catch { /* keep polling */ }
       }
+      // Polling exhausted — stop spinner so user isn't stuck
+      if (active) setPollTimedOut(true);
       pollingIdRef.current = null;
     };
 
     poll();
     return () => { active = false; };
-  }, [analysisId, aiRequested, mergedReport]);
+  }, [analysisId, aiRequested, mergedReport, pollTimedOut]);
 
   const startAiAgent = useCallback(async () => {
     if (!analysisId || mergedReport !== null) return;
+    setPollTimedOut(false);
     setAiRequested(true);
     await triggerAiReport(analysisId).catch(() => {/* server may already be running */});
   }, [analysisId, mergedReport]);
@@ -75,7 +81,8 @@ export function useAnalysis(params: {
     isError: fastQuery.isError,
     error: fastQuery.error,
     refetch: fastQuery.refetch,
-    isReportLoading: aiRequested && mergedReport === null,
+    isReportLoading: aiRequested && mergedReport === null && !pollTimedOut,
+    pollTimedOut,
     startAiAgent,
     aiRequested,
   };

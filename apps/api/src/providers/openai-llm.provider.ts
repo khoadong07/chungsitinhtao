@@ -42,7 +42,8 @@ export class OpenAiLlmProvider implements LlmProvider {
 
       if (res.status === 429) {
         const retryAfter = res.headers.get('retry-after');
-        const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 5000;
+        // Cap wait at 10s so total backend time stays within frontend's 3min poll window
+        const waitMs = Math.min(retryAfter ? parseInt(retryAfter, 10) * 1000 : 5000, 10000);
         process.stderr.write(`[llm] 429 rate limit — retrying after ${waitMs}ms\n`);
         await new Promise(r => setTimeout(r, waitMs));
         throw new AppError('LLM_RATE_LIMIT', 'Rate limited — will retry', 429);
