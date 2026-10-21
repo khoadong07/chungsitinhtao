@@ -127,9 +127,9 @@ export function ValuationPanel({ fundamental, currentClose }: Props) {
         {/* Performance row */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { l: '1 ngày', v: filter.perChange1D },
-            { l: '1 tháng', v: filter.perChange1M },
-            { l: '1 năm', v: filter.perChange1Y },
+            { l: '1 ngày', v: filter.perChange1D ?? 0 },
+            { l: '1 tháng', v: filter.perChange1M ?? 0 },
+            { l: '1 năm', v: filter.perChange1Y ?? 0 },
           ].map(({ l, v }) => (
             <div
               key={l}
@@ -155,8 +155,8 @@ export function ValuationPanel({ fundamental, currentClose }: Props) {
           {[
             { l: 'EPS',   v: filter.eps  > 0 ? filter.eps.toLocaleString('vi-VN')  + ' VND' : 'N/A' },
             { l: 'BVPS',  v: filter.bvps > 0 ? filter.bvps.toLocaleString('vi-VN') + ' VND' : 'N/A' },
-            { l: 'Beta',  v: filter.beta.toFixed(2) },
-            { l: 'NĐTNN', v: filter.foreignOwnershipPct.toFixed(1) + '%' },
+            { l: 'Beta',  v: filter.beta != null ? filter.beta.toFixed(2) : 'N/A' },
+            { l: 'NĐTNN', v: filter.foreignOwnershipPct != null ? filter.foreignOwnershipPct.toFixed(1) + '%' : 'N/A' },
           ].map(({ l, v }) => (
             <div key={l} className="rounded-xl px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <p className="text-[10px] text-slate-500 mb-0.5">{l}</p>

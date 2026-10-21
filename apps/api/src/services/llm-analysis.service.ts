@@ -125,9 +125,9 @@ DỮ LIỆU CƠ BẢN (BSI):
 - Vốn hóa: ${analysis.fundamental.filter.marketCapBillion.toFixed(0)} tỷ VND
 - PE: ${analysis.fundamental.filter.pe > 0 ? analysis.fundamental.filter.pe.toFixed(2) : 'N/A'} | PB: ${analysis.fundamental.filter.pb > 0 ? analysis.fundamental.filter.pb.toFixed(2) : 'N/A'} | PS: ${analysis.fundamental.filter.ps > 0 ? analysis.fundamental.filter.ps.toFixed(2) : 'N/A'}
 - EPS: ${analysis.fundamental.filter.eps > 0 ? analysis.fundamental.filter.eps.toFixed(0) : 'N/A'} | BVPS: ${analysis.fundamental.filter.bvps > 0 ? analysis.fundamental.filter.bvps.toFixed(0) : 'N/A'}
-- ROE: ${analysis.fundamental.filter.roe.toFixed(2)}% | ROA: ${analysis.fundamental.filter.roa.toFixed(2)}%
-- Beta: ${analysis.fundamental.filter.beta.toFixed(2)}
-- Sở hữu NĐTNN: ${analysis.fundamental.filter.foreignOwnershipPct.toFixed(2)}%
+- ROE: ${analysis.fundamental.filter.roe != null ? analysis.fundamental.filter.roe.toFixed(2) + '%' : 'N/A'} | ROA: ${analysis.fundamental.filter.roa != null ? analysis.fundamental.filter.roa.toFixed(2) + '%' : 'N/A'}
+- Beta: ${analysis.fundamental.filter.beta != null ? analysis.fundamental.filter.beta.toFixed(2) : 'N/A'}
+- Sở hữu NĐTNN: ${analysis.fundamental.filter.foreignOwnershipPct != null ? analysis.fundamental.filter.foreignOwnershipPct.toFixed(2) + '%' : 'N/A'}
 - 52W High/Low: ${analysis.fundamental.filter.high52W} / ${analysis.fundamental.filter.low52W}
 - Hiệu suất: 1D=${analysis.fundamental.filter.perChange1D}% | 1M=${analysis.fundamental.filter.perChange1M}% | 1Y=${analysis.fundamental.filter.perChange1Y}%
 - Tín hiệu BSI: ${JSON.stringify(analysis.fundamental.filter.generalSignal)} (negative/neutral/positive)${analysis.fundamental.valuation.peFairValue ? `\n- Giá hợp lý theo PE: ${analysis.fundamental.valuation.peFairValue.toFixed(0)} VND` : ''}${analysis.fundamental.valuation.pbFairValue ? `\n- Giá hợp lý theo PB: ${analysis.fundamental.valuation.pbFairValue.toFixed(0)} VND` : ''}` : ''}

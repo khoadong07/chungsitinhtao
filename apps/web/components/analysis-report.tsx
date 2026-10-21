@@ -12,7 +12,7 @@ import { CommunityWidget } from './community-widget';
 
 const CandlestickChart = dynamic(() => import('./candlestick-chart'), { ssr: false });
 
-interface Props { data: AnalysisOutput; onRetry: () => void; isReportLoading?: boolean; onStartAiAgent?: () => void; aiRequested?: boolean; }
+interface Props { data: AnalysisOutput; onRetry: () => void; isReportLoading?: boolean; onStartAiAgent?: () => void; aiRequested?: boolean; pollTimedOut?: boolean; }
 
 function fmt(v: number) {
   return v.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -68,7 +68,7 @@ function PriceZones({ zones }: { zones: AnalysisOutput['priceZones'] }) {
   );
 }
 
-export function AnalysisReport({ data, onRetry, isReportLoading = false, onStartAiAgent, aiRequested = false }: Props) {
+export function AnalysisReport({ data, onRetry, isReportLoading = false, onStartAiAgent, aiRequested = false, pollTimedOut = false }: Props) {
   const { dataSource, technical, decision, priceZones, warnings } = data;
   const asOf = new Date(data.asOf).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
   const close = technical.snapshot.close;
@@ -161,12 +161,12 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false, onStart
             {[
               { l: 'P/E',     v: data.fundamental.filter.pe   > 0 ? data.fundamental.filter.pe.toFixed(1)   : 'N/A', dim: data.fundamental.filter.pe <= 0 },
               { l: 'P/B',     v: data.fundamental.filter.pb   > 0 ? data.fundamental.filter.pb.toFixed(2)   : 'N/A', dim: data.fundamental.filter.pb <= 0 },
-              { l: 'ROE',     v: data.fundamental.filter.roe.toFixed(1) + '%', dim: false },
-              { l: 'ROA',     v: data.fundamental.filter.roa.toFixed(1) + '%', dim: false },
+              { l: 'ROE',     v: data.fundamental.filter.roe != null ? data.fundamental.filter.roe.toFixed(1) + '%' : 'N/A', dim: false },
+              { l: 'ROA',     v: data.fundamental.filter.roa != null ? data.fundamental.filter.roa.toFixed(1) + '%' : 'N/A', dim: false },
               { l: 'EPS',     v: data.fundamental.filter.eps  > 0 ? (data.fundamental.filter.eps/1000).toFixed(0) + 'k' : 'N/A', dim: data.fundamental.filter.eps <= 0 },
-              { l: 'Beta',    v: data.fundamental.filter.beta.toFixed(2), dim: false },
-              { l: 'Vốn hóa', v: (data.fundamental.filter.marketCapBillion/1000).toFixed(0) + 'T', dim: false },
-              { l: 'NĐTNN',   v: data.fundamental.filter.foreignOwnershipPct.toFixed(1) + '%', dim: false },
+              { l: 'Beta',    v: data.fundamental.filter.beta != null ? data.fundamental.filter.beta.toFixed(2) : 'N/A', dim: false },
+              { l: 'Vốn hóa', v: data.fundamental.filter.marketCapBillion != null ? (data.fundamental.filter.marketCapBillion/1000).toFixed(0) + 'T' : 'N/A', dim: false },
+              { l: 'NĐTNN',   v: data.fundamental.filter.foreignOwnershipPct != null ? data.fundamental.filter.foreignOwnershipPct.toFixed(1) + '%' : 'N/A', dim: false },
             ].map(({ l, v, dim }) => (
               <div key={l} className="group">
                 <p className="text-[10px] text-slate-600 mb-0.5 uppercase tracking-wide">{l}</p>
@@ -217,7 +217,7 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false, onStart
         {/* Right column */}
         <div className="space-y-4">
           <div className="anim-slide-r d-1">
-            <AiAgentPanel report={data.report} model={data.model} symbol={data.symbol} isLoading={isReportLoading} onStart={onStartAiAgent} aiRequested={aiRequested} />
+            <AiAgentPanel report={data.report} model={data.model} symbol={data.symbol} isLoading={isReportLoading} onStart={onStartAiAgent} aiRequested={aiRequested} pollTimedOut={pollTimedOut} />
           </div>
           {data.fundamental && (
             <div className="anim-slide-r d-2">
