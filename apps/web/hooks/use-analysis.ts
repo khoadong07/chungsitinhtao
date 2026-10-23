@@ -69,11 +69,12 @@ export function useAnalysis(params: {
   }, [analysisId, aiRequested, mergedReport, pollTimedOut]);
 
   const startAiAgent = useCallback(async () => {
-    if (!analysisId || mergedReport !== null) return;
+    // Don't fire if: no id, already have report, already polling (aiRequested)
+    if (!analysisId || mergedReport !== null || (aiRequested && !pollTimedOut)) return;
     setPollTimedOut(false);
     setAiRequested(true);
     await triggerAiReport(analysisId).catch(() => {/* server may already be running */});
-  }, [analysisId, mergedReport]);
+  }, [analysisId, mergedReport, aiRequested, pollTimedOut]);
 
   return {
     data: merged,

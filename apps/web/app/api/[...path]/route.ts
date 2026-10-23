@@ -6,11 +6,13 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
   const { pathname, search } = req.nextUrl;
   const target = `${API_URL}${pathname}${search}`;
 
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
-
-  const init: RequestInit = { method: req.method, headers };
+  const init: RequestInit = { method: req.method, headers: {} };
   if (req.method !== 'GET' && req.method !== 'HEAD') {
-    init.body = await req.text();
+    const bodyText = await req.text();
+    if (bodyText) {
+      (init.headers as Record<string, string>)['Content-Type'] = 'application/json';
+      init.body = bodyText;
+    }
   }
 
   try {

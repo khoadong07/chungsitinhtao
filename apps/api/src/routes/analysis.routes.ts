@@ -53,11 +53,10 @@ export async function analysisRoutes(fastify: FastifyInstance) {
         throw new AppError('NOT_FOUND', `Analysis ${analysisId} not found`, 404);
       }
       if (existing.report !== null) {
-        // Already has a report — return immediately
         return reply.send({ status: 'already_done' });
       }
-      triggerLlmEnrichment(analysisId, existing);
-      return reply.send({ status: 'started' });
+      const status = await triggerLlmEnrichment(analysisId, existing);
+      return reply.send({ status });
     } catch (err) {
       if (err instanceof AppError || (err instanceof Error && 'statusCode' in err)) throw err;
       throw new AppError('DATABASE_ERROR', 'Unable to trigger LLM enrichment', 503);

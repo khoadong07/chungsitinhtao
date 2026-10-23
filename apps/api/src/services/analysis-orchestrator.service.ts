@@ -84,10 +84,20 @@ export async function runAnalysis(input: AnalysisInput): Promise<AnalysisOutput>
   return fastResult;
 }
 
-export async function triggerLlmEnrichment(analysisId: string, base: AnalysisOutput): Promise<void> {
+// In-process dedup: tracks analysisIds currently being enriched
+const _inProgress = new Set<string>();
+
+export function isLlmInProgress(analysisId: string): boolean {
+  return _inProgress.has(analysisId);
+}
+
+export async function triggerLlmEnrichment(analysisId: string, base: AnalysisOutput): Promise<'started' | 'in_progress'> {
+  if (_inProgress.has(analysisId)) return 'in_progress';
+  _inProgress.add(analysisId);
   enrichWithLlmReport(base).catch(err => {
     process.stderr.write(`[llm-bg] ${analysisId}: ${err instanceof Error ? err.message : String(err)}\n`);
-  });
+  }).finally(() => _inProgress.delete(analysisId));
+  return 'started';
 }
 
 async function enrichWithLlmReport(base: AnalysisOutput): Promise<void> {

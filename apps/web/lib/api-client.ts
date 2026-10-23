@@ -57,5 +57,7 @@ export async function runAnalysis(params: {
 export async function triggerAiReport(analysisId: string): Promise<void> {
   await fetch(`${API_BASE}/api/v1/analysis/${encodeURIComponent(analysisId)}/report`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
   });
 }
