@@ -138,7 +138,7 @@ export function AnalysisReport({ data, onRetry, isReportLoading = false, onStart
                 { label: 'EMA20', value: ema20, pct: vsEma },
                 { label: 'EMA50', value: ema50, pct: vsEma50 },
                 { label: 'Hôm qua', value: prevCandle?.close ?? null, pct: vsPrevClose },
-              ].filter(m => m.value !== null && m.pct !== null).map((m, i, arr) => (
+              ].filter(m => m.value != null && m.pct != null).map((m, i, arr) => (
                 <div
                   key={m.label}
                   className="px-3 text-right"

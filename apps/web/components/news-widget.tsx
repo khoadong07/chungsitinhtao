@@ -50,8 +50,8 @@ function NewsCard({ item, symbol }: { item: NewsItem; symbol: string }) {
                 color: s.symbol === symbol ? '#c4b5fd' : '#64748b',
               }}>
               {s.symbol}
-              <span style={{ color: s.percentChange >= 0 ? '#22c55e' : '#ef4444' }}>
-                {s.percentChange >= 0 ? '+' : ''}{s.percentChange.toFixed(1)}%
+              <span style={{ color: (s.percentChange ?? 0) >= 0 ? '#22c55e' : '#ef4444' }}>
+                {(s.percentChange ?? 0) >= 0 ? '+' : ''}{(s.percentChange ?? 0).toFixed(1)}%
               </span>
             </span>
           ))}
