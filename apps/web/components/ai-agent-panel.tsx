@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { AnalysisReport, ActionPlan } from '../lib/types';
 
 /* ── helpers ─────────────────────────────────────────────── */
@@ -95,7 +96,7 @@ function ActionPlanCard({ plan }: { plan: ActionPlan }) {
   );
 }
 
-/* ── FullReportModal ─────────────────────────────────────── */
+/* ── FullReportModal (renders via portal into document.body) ─ */
 
 function FullReportModal({ report, symbol, model, onClose }: {
   report: AnalysisReport;
@@ -105,10 +106,21 @@ function FullReportModal({ report, symbol, model, onClose }: {
 }) {
   const modelLabel = model ? (MODEL_LABEL[model] ?? model) : 'Fallback';
   const m = setupMeta(report.setup.classification);
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => { document.body.style.overflow = ''; window.removeEventListener('keydown', onKey); };
+  }, [onClose]);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -252,7 +264,8 @@ function FullReportModal({ report, symbol, model, onClose }: {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -343,16 +356,15 @@ export function AiAgentPanel({ report, model, symbol, isLoading = false, onStart
             </div>
 
           ) : isLoading ? (
-            <div className="space-y-3 py-2">
-              <div className="skeleton h-4 rounded-lg w-full" />
-              <div className="skeleton h-4 rounded-lg w-4/5" />
-              <div className="skeleton h-4 rounded-lg w-3/5" />
-              <div className="skeleton h-16 rounded-xl w-full mt-2" />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="skeleton h-24 rounded-xl" />
-                <div className="skeleton h-24 rounded-xl" />
+            <div className="space-y-2.5 py-1">
+              <div className="skeleton h-3 rounded w-full" />
+              <div className="skeleton h-3 rounded w-4/5" />
+              <div className="skeleton h-3 rounded w-3/5" />
+              <div className="skeleton h-10 rounded-xl w-full mt-1" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="skeleton h-16 rounded-xl" />
+                <div className="skeleton h-16 rounded-xl" />
               </div>
-              <div className="skeleton h-16 rounded-xl w-full" />
               <p className="text-center text-xs text-slate-600 pt-1 flex items-center justify-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-violet-500 glow-dot inline-block" />
                 AI đang phân tích...
