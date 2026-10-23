@@ -14,7 +14,7 @@ const envSchema = z.object({
   LLM_BASE_URL: z.string().url().optional(),
   LLM_API_KEY: z.string().optional(),
   LLM_MODEL: z.string().optional(),
-  LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(120000),
   FIREANT_TOKEN: z.string().optional(),
 });
 

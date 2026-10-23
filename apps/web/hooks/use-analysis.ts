@@ -47,8 +47,8 @@ export function useAnalysis(params: {
     let active = true;
 
     const poll = async () => {
-      // 90 attempts × 2s = 3 minutes max (backend LLM can take up to ~2min with retries)
-      for (let i = 0; i < 90 && active; i++) {
+      // 150 attempts × 2s = 5 minutes max (DeepSeek-V3 with actionPlan can take ~90s)
+      for (let i = 0; i < 150 && active; i++) {
         await new Promise(r => setTimeout(r, 2000));
         try {
           const result = await pollAnalysisReport(analysisId);
