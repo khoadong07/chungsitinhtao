@@ -155,6 +155,19 @@ export interface AnalysisOutput {
   model: string | null;
 }
 
+export interface TradeLevel {
+  price: number;
+  note: string;
+}
+
+export interface ActionPlan {
+  side: 'long' | 'none';
+  entry: { lower: number; upper: number; note: string } | null;
+  stopLoss: TradeLevel | null;
+  targets: TradeLevel[];
+  rationale: string;
+}
+
 export interface AnalysisReport {
   symbol: string;
   asOf: string;
@@ -168,4 +181,5 @@ export interface AnalysisReport {
   scenarios: Scenario[];
   risks: string[];
   limitations: string[];
+  actionPlan?: ActionPlan | null;
 }

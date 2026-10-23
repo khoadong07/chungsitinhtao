@@ -1,4 +1,99 @@
-import type { AnalysisReport } from '../lib/types';
+import type { AnalysisReport, ActionPlan } from '../lib/types';
+
+function ActionPlanCard({ plan }: { plan: ActionPlan }) {
+  if (plan.side === 'none') {
+    return (
+      <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Kế hoạch giao dịch</p>
+        <p className="text-xs text-slate-500 leading-relaxed">{plan.rationale}</p>
+      </div>
+    );
+  }
+
+  const rr = plan.entry && plan.stopLoss && plan.targets.length > 0
+    ? (() => {
+        const entryMid = (plan.entry.lower + plan.entry.upper) / 2;
+        const risk = entryMid - plan.stopLoss.price;
+        const reward = plan.targets[0].price - entryMid;
+        return risk > 0 ? (reward / risk).toFixed(1) : null;
+      })()
+    : null;
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(16,185,129,0.2)' }}>
+      {/* Header */}
+      <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'rgba(16,185,129,0.07)', borderBottom: '1px solid rgba(16,185,129,0.12)' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-emerald-400 text-sm">📋</span>
+          <p className="text-[11px] font-bold text-emerald-300 uppercase tracking-widest">Kế hoạch giao dịch</p>
+        </div>
+        {rr && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399' }}>
+            R:R {rr}
+          </span>
+        )}
+      </div>
+
+      <div className="p-4 space-y-3" style={{ background: 'rgba(16,185,129,0.03)' }}>
+        {/* Rationale */}
+        <p className="text-[11px] text-slate-400 leading-relaxed">{plan.rationale}</p>
+
+        {/* Price levels grid */}
+        <div className="space-y-2">
+          {/* Entry zone */}
+          {plan.entry && (
+            <div className="flex items-start gap-3 rounded-lg px-3 py-2.5" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)' }}>
+              <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(16,185,129,0.2)' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wide mb-0.5">Vùng vào lệnh</p>
+                <p className="text-sm font-bold text-white tabular-nums">{plan.entry.lower.toFixed(2)} – {plan.entry.upper.toFixed(2)}</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{plan.entry.note}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Stop loss */}
+          {plan.stopLoss && (
+            <div className="flex items-start gap-3 rounded-lg px-3 py-2.5" style={{ background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.15)' }}>
+              <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(244,63,94,0.15)' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold text-rose-400 uppercase tracking-wide mb-0.5">Cắt lỗ</p>
+                <p className="text-sm font-bold text-white tabular-nums">{plan.stopLoss.price.toFixed(2)}</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{plan.stopLoss.note}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Take profit targets */}
+          {plan.targets.length > 0 && (
+            <div className="space-y-1.5">
+              {plan.targets.map((t, i) => (
+                <div key={i} className="flex items-start gap-3 rounded-lg px-3 py-2.5" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)' }}>
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(139,92,246,0.15)' }}>
+                    <span className="text-[9px] font-bold text-violet-400">T{i + 1}</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-wide mb-0.5">Chốt lời {i + 1}</p>
+                    <p className="text-sm font-bold text-white tabular-nums">{t.price.toFixed(2)}</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{t.note}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   report: AnalysisReport | null;
@@ -210,6 +305,9 @@ export function AiAgentPanel({ report, model, symbol, isLoading = false, onStart
                 </div>
               </div>
             )}
+
+            {/* Action plan */}
+            {report.actionPlan && <ActionPlanCard plan={report.actionPlan} />}
           </>
         )}
       </div>

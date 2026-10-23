@@ -80,8 +80,25 @@ Quy tắc bắt buộc:
     { "name": "bearish", "trigger": string, "invalidation": string, "rationale": string[] }
   ],
   "risks": string[],
-  "limitations": string[]
-}`;
+  "limitations": string[],
+  "actionPlan": {
+    "side": "long"|"none",
+    "entry": { "lower": number, "upper": number, "note": string } | null,
+    "stopLoss": { "price": number, "note": string } | null,
+    "targets": [{ "price": number, "note": string }],
+    "rationale": string
+  } | null
+}
+
+HƯỚNG DẪN actionPlan (kế hoạch giao dịch):
+- Tất cả giá trong actionPlan phải theo CÙNG ĐƠN VỊ với giá đóng cửa (nghìn VND hoặc USD tuỳ mã)
+- Nếu setup = "potential_entry" HOẶC "wait_for_confirmation": cung cấp kế hoạch cụ thể với side="long"
+  + entry.lower/upper: vùng giá lý tưởng để vào lệnh (thường là vùng hỗ trợ gần nhất hoặc điểm pullback về EMA)
+  + stopLoss.price: ngưỡng cắt lỗ rõ ràng (dưới support mạnh nhất hoặc dưới 1–1.5×ATR14 từ entry)
+  + targets: 1–3 mục tiêu chốt lời (dựa trên vùng kháng cự, tỷ lệ R:R ≥ 1.5)
+  + rationale: lý do kỹ thuật ngắn gọn cho kế hoạch này
+- Nếu setup = "hold_watch", "risk_elevated", hoặc "insufficient_data": đặt side="none", entry=null, stopLoss=null, targets=[], rationale giải thích tại sao chưa hành động
+- KHÔNG được bịa số — chỉ sử dụng giá từ dữ liệu support/resistance/EMA/snapshot đã cung cấp`;
 
 function buildUserPrompt(analysis: AnalysisOutput): string {
   const { symbol, asOf, dataSource, technical, decision, priceZones, warnings } = analysis;
@@ -132,7 +149,9 @@ DỮ LIỆU CƠ BẢN (BSI):
 - Hiệu suất: 1D=${analysis.fundamental.filter.perChange1D}% | 1M=${analysis.fundamental.filter.perChange1M}% | 1Y=${analysis.fundamental.filter.perChange1Y}%
 - Tín hiệu BSI: ${JSON.stringify(analysis.fundamental.filter.generalSignal)} (negative/neutral/positive)${analysis.fundamental.valuation.peFairValue ? `\n- Giá hợp lý theo PE: ${analysis.fundamental.valuation.peFairValue.toFixed(0)} VND` : ''}${analysis.fundamental.valuation.pbFairValue ? `\n- Giá hợp lý theo PB: ${analysis.fundamental.valuation.pbFairValue.toFixed(0)} VND` : ''}` : ''}
 
-Hãy phân tích và trả về JSON theo schema đã cho. QUAN TRỌNG: trend.classification và momentum.classification PHẢI khớp với giá trị từ rule engine ở trên, trừ khi có lý do kỹ thuật rõ ràng để khác biệt.`;
+Hãy phân tích và trả về JSON theo schema đã cho.
+QUAN TRỌNG 1: trend.classification và momentum.classification PHẢI khớp với giá trị từ rule engine ở trên, trừ khi có lý do kỹ thuật rõ ràng để khác biệt.
+QUAN TRỌNG 2: Phần actionPlan PHẢI có giá trị (không được bỏ qua trường này). Nếu setup cho phép giao dịch hãy đưa ra điểm vào cụ thể; nếu không hãy đặt side="none" và giải thích lý do.`;
 }
 
 export function buildFallbackReport(analysis: AnalysisOutput): AnalysisReport {
@@ -168,6 +187,7 @@ export function buildFallbackReport(analysis: AnalysisOutput): AnalysisReport {
         : 'Không xác định được vùng kháng cự.',
     ],
     limitations,
+    actionPlan: null,
   };
 }
 
